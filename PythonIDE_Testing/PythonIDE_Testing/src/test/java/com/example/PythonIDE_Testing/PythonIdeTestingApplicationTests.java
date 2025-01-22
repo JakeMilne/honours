@@ -1,13 +1,13 @@
-package com.example.demo;
+package com.example.PythonIDE_Testing;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(classes = PythonIdeTestingApplication.class)
-public class PythonIdeTestingApplicationTests {
+@SpringBootTest
+class PythonIdeTestingApplicationTests {
 
 	@Test
 	void contextLoads() {
-		// Basic context loading test to ensure the application starts up
 	}
+
 }

@@ -1,20 +1,22 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html>
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Submit Form</title>
 </head>
 <body>
 
-<form action="/Servlet" method="GET">
-  <label for="userprompt">First name:</label><br>
-  <input type="text" id="userprompt" name="userprompt" value="John"><br>
-  <label for="lname">Last name:</label><br>
-    <script>
-        // create array of answers, convert to string or json
-    </script>
-  <input type="text" id="lname" name="lname" value="Doe"><br><br>
-  <input type="submit" value="Submit">
+<h1>Welcome to the Form</h1>
+
+<form action="/MyServlet" method="POST">
+    <label for="userprompt">First name:</label><br>
+    <input type="text" id="userprompt" name="userprompt" value="John"><br>
+
+    <label for="lname">Last name:</label><br>
+    <input type="text" id="lname" name="lname" value="Doe"><br><br>
+
+    <input type="submit" value="Submit">
 </form>
+
 </body>
 </html>
