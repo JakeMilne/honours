@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.http.HttpResponse;
+
 
 @WebServlet("/MyServlet")
 public class MyServlet extends HttpServlet {
@@ -24,6 +26,20 @@ public class MyServlet extends HttpServlet {
         writer.println("</html>");
         writer.close();
         LLMHandler handler = new LLMHandler();
-        handler.callLM(userprompt);
+//        String response = handler.callLM(userprompt);
+        String callresponse = handler.callLM(userprompt);
+        ResponseHandler responseHandler = new ResponseHandler();
+        String content = responseHandler.extractContent(callresponse);
+        System.out.println(content);
     }
 }
+
+//python response looks like
+
+//```python
+//# This is a comment - anything after the "#" symbol is ignored by the interpreter
+//
+//# The print function is used to output text to the screen
+//print("Hello, World!")
+//```
+// can parse using the ```python part
