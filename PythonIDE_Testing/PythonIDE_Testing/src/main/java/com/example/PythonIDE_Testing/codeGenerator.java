@@ -20,9 +20,28 @@ import java.util.List;
 import com.google.gson.Gson;
 import java.io.IOException;
 
-public class LLMHandler {
+public class codeGenerator {
 
-    public LLMHandler() {}
+    private String prompt;
+    private String[] drafts;
+//    private String[] parameters;
+    private String parameters;
+//    private String[] exampleOutputs;
+    private String exampleOutputs;
+    private int iterationCap = 3;
+    private int iterationCount = 0;
+    private String[][] issues;
+
+
+
+    public codeGenerator() {}
+
+    public codeGenerator(String prompt, String parameters, String exampleOutputs) {
+        this.prompt = prompt;
+        this.parameters = parameters;
+        this.exampleOutputs = exampleOutputs;
+        this.iterationCount = 0;
+    }
 
     public static String callLM(String prompt) {
         try {
@@ -32,6 +51,7 @@ public class LLMHandler {
             Map<String, Object> requestBody = Map.of(
                     "model", "meta-llama-3.1-8b-instruct",
                     "messages", List.of(
+                            Map.of("role", "system", "content", "You are a coding assistant that creates python code. Only Create python code, offer no explanation, do not include anything in your answer other than python code. Only return 1 piece of code"),
                             Map.of("role", "user", "content", prompt)
                     )
             );

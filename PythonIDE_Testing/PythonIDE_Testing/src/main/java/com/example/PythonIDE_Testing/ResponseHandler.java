@@ -28,5 +28,14 @@ public class ResponseHandler {
         }
     }
 
+    public static String extractCode(String jsonResponse) {
+        String response = extractContent(jsonResponse);
+        String code = response.substring(response.indexOf("```python") + 10, response.lastIndexOf("```"));
+        System.out.println("Extracted code:");
+        System.out.println(code);
+
+        return code;
+    }
+
 
 }

@@ -16,21 +16,28 @@ public class MyServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String userprompt = request.getParameter("userprompt");
-        String lname = request.getParameter("lname");
+        String parameter = request.getParameter("parameters");
+        String exampleOutputs = request.getParameter("exampleOutputs");
+
 
         response.setContentType("text/html");
         PrintWriter writer = response.getWriter();
         writer.println("<html>");
-        writer.println("<h1>First Name: " + userprompt + "</h1>");
-        writer.println("<h1>Last Name: " + lname + "</h1>");
-        writer.println("</html>");
-        writer.close();
-        LLMHandler handler = new LLMHandler();
+        writer.println("<h1>Prompt: " + userprompt + "</h1>");
+        writer.println("<h1>parameters: " + parameter + "</h1>");
+        writer.println("<h1>example output(s): " + exampleOutputs + "</h1>");
+        codeGenerator handler = new codeGenerator(userprompt, parameter, exampleOutputs);
 //        String response = handler.callLM(userprompt);
         String callresponse = handler.callLM(userprompt);
         ResponseHandler responseHandler = new ResponseHandler();
+//        String content = responseHandler.extractCode(callresponse);
         String content = responseHandler.extractContent(callresponse);
+
         System.out.println(content);
+
+        writer.println("<h1>Code: " + content + "</h1>");
+        writer.println("</html>");
+        writer.close();
     }
 }
 
