@@ -30,9 +30,10 @@ public class MyServlet extends HttpServlet {
 //        String response = handler.callLM(userprompt);
         String callresponse = handler.callLM(userprompt);
         ResponseHandler responseHandler = new ResponseHandler();
-//        String content = responseHandler.extractCode(callresponse);
-        String content = responseHandler.extractContent(callresponse);
-
+        String content = responseHandler.extractCode(callresponse);
+//        String content = responseHandler.extractContent(callresponse);
+        dockerHandler docker = new dockerHandler();
+        docker.saveFile(content);
         System.out.println(content);
 
         writer.println("<h1>Code: " + content + "</h1>");

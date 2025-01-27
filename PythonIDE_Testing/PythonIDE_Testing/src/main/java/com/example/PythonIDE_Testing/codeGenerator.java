@@ -51,7 +51,7 @@ public class codeGenerator {
             Map<String, Object> requestBody = Map.of(
                     "model", "meta-llama-3.1-8b-instruct",
                     "messages", List.of(
-                            Map.of("role", "system", "content", "You are a coding assistant that creates python code. Only Create python code, offer no explanation, do not include anything in your answer other than python code. Only return 1 piece of code"),
+                            Map.of("role", "system", "content", "You are a coding assistant that creates python code. Only Create python code, offer no explanation, do not include anything in your answer other than python code. Only return 1 piece of code. Tag all code with ```python. DO not create any code that is not specified by the user"),
                             Map.of("role", "user", "content", prompt)
                     )
             );
