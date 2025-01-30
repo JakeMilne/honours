@@ -1,17 +1,23 @@
 package com.example.PythonIDE_Testing;
 
-
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
 import java.io.*;
-
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.ArrayList;
 
 public class dockerHandler {
 
     public dockerHandler() {}
 
-    public String saveFile(String pythonCode) {
-        try {
+    public void saveFile(String pythonCode) {
+
+//            String strippedPythonCode = pythonCode;
             String strippedPythonCode = stripHtmlTags(pythonCode);
+
             String containerName = "pythonide_testing-app-1";
             String filePath = "/tmp/script.py";
 
@@ -50,10 +56,16 @@ public class dockerHandler {
                 e.printStackTrace();
             }
 
-//            ProcessBuilder banditProcess = new ProcessBuilder(
-//                    "docker", "exec", "-i", "pythonide_testing-app-1",
-//                    "bandit", "-r", "/tmp/script.py"
-//            );
+
+
+    }
+
+
+    //method that calls bandit on the file
+    public ArrayList<Vulnerability> runBanditOnFile() {
+        ArrayList<Vulnerability> vulnerabilities = new ArrayList<Vulnerability>();
+
+        try {
             ProcessBuilder banditProcess = new ProcessBuilder(
                     "docker", "exec", "-i", "pythonide_testing-app-1",
 //                    "bandit", "-r", "/tmp/script.py", "-v", "-f", "json"
@@ -65,18 +77,6 @@ public class dockerHandler {
 
 
 
-
-
-//            int banditExitCode = bandit.waitFor();
-//            if (banditExitCode != 0) {
-//                System.err.println("Error: Bandit analysis failed. Exit code: " + banditExitCode);
-//                BufferedReader errorReader = new BufferedReader(new InputStreamReader(bandit.getErrorStream()));
-//                String errorLine;
-//                while ((errorLine = errorReader.readLine()) != null) {
-//                    System.err.println(errorLine);
-//                }
-//                return;
-//            }
             System.out.println("Bandit analysis completed successfully.");
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(bandit.getInputStream()));
@@ -90,53 +90,30 @@ public class dockerHandler {
                 if(line.contains("Issue: [")){
 
                     vulnerability += line;
-                        for(int j = 0; j < 7; j++){
-                            i++;
-                            line = reader.readLine();
-                            System.out.println(("Line " + i));
-                            System.out.println(line);
-                            vulnerability += line;
-                            vulnerability += "\n";
-                            parseVulnerability(vulnerability);
-                        }
+                    for(int j = 0; j < 7; j++){
+                        i++;
+                        line = reader.readLine();
+                        System.out.println(("Line " + i));
+                        System.out.println(line);
+                        vulnerability += line;
+                        vulnerability += "\n";
+                    }
+
+                    vulnerabilities.add(parseVulnerability(vulnerability));
+                    vulnerability = "";
 
                 }
 
                 i++;
             }
             System.out.println(vulnerability);
-            return vulnerability;
 
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-        return null;
-    }
+            return vulnerabilities;
 
-
-    //method that calls bandit on the file
-    public void runBanditOnFile(String filePath) {
-        try {
-            System.out.println("Running Bandit on file: " + filePath);
-            ProcessBuilder banditProcess = new ProcessBuilder(
-                    "docker", "exec", "-i", "pythonide_testing-app-1",
-                    "bandit", "-r", filePath, "-v", "-f", "json"
-            );
-//            banditProcess.redirectErrorStream(true);
-            Process bandit = banditProcess.start();
-            bandit.waitFor();
-            System.out.println("Bandit analysis completed");
-
-            BufferedReader reader = new BufferedReader(new InputStreamReader(bandit.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                System.out.println(line);
-            }
-
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
         }
-    }
 
 
     //method that runs the file and returns the result
@@ -164,17 +141,53 @@ public class dockerHandler {
         return result.toString();
     }
 
-    public void parseVulnerability(String vulnString){
+    public Vulnerability parseVulnerability(String vulnString){
         System.out.println(vulnString);
 
+//        Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.   Severity: Medium   Confidence: Low
+//        CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
+//        More Info: https://bandit.readthedocs.io/en/1.8.2/plugins/b608_hardcoded_sql_expressions.html
+//        Location: /tmp/script.py:10:15
+//9           def format_query(self, username: str, password: str) -> str:
+//10              return f"SELECT * FROM users WHERE username='{username}' AND password='{password}'"
+//11
+        String description = vulnString.substring(vulnString.indexOf("]") + 1, vulnString.indexOf("Severity:"));
+        String severity = vulnString.substring(vulnString.indexOf("Severity:") + 9, vulnString.indexOf("Confidence:"));
+        String CWE = extractCWE(vulnString);
+        String moreInfo = vulnString.substring(vulnString.indexOf("More Info:") + 10, vulnString.indexOf("Location:"));
+        String codeSnippet = vulnString.substring(vulnString.indexOf("Location:") + 10);
 
-
-
-
-//        Vulnerability vulnerability = new Vulnerability();
+        System.out.println("Description: " + description);
+        System.out.println("Severity: " + severity);
+        System.out.println("CWE: " + CWE);
+        System.out.println("More Info: " + moreInfo);
+        System.out.println("Code Snippet: " + codeSnippet);
+        Vulnerability vulnerability = new Vulnerability(description, severity, Integer.parseInt(CWE), codeSnippet, moreInfo);
+        return vulnerability;
     }
+
+    public static String extractCWE(String input) {
+        String regex = "CWE:\\s*CWE-(\\d+)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(input);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+
+        return null; // Return null if no CWE number is found
+    }
+
+
     public static String stripHtmlTags(String input) {
-        return input.replaceAll("<[^>]+>", "").trim();
+        Document doc = Jsoup.parse(input, "", Parser.xmlParser());
+
+        Element preTag = doc.selectFirst("pre");
+        String text = preTag != null ? preTag.wholeText() : "";
+
+        text = text.replace("<br>", "\n");
+
+        return text;
     }
 
 

@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.List;
 import com.google.gson.Gson;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class codeGenerator {
 
@@ -88,10 +89,14 @@ public class codeGenerator {
     }
 
 
-    public String regenerateForVulnerability(String code, String vulnerability){
+    public String regenerateForVulnerability(String code, ArrayList<Vulnerability> vulnerabilities){
         try {
+            String vulnerability = "";
+            for(Vulnerability v : vulnerabilities){
+                vulnerability += v.toString() + "\n";
+            }
             String url = "http://localhost:1234/v1/chat/completions";
-            String prompt = "Fix the following vulnerability: \n" + vulnerability + "\n found in this code: " + code;
+            String prompt = "Fix the following vulnerability(s): \n" + vulnerability + "\n found in this code: " + code;
             Gson gson = new Gson();
             Map<String, Object> requestBody = Map.of(
                     "model", "meta-llama-3.1-8b-instruct",

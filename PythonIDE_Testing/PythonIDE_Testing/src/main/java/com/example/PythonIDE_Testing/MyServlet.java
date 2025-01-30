@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 
 
 @WebServlet("/MyServlet")
@@ -34,13 +35,14 @@ public class MyServlet extends HttpServlet {
         content = "<pre>" + content.replace("\n", "<br>") + "</pre>";
 //        String content = responseHandler.extractContent(callresponse);
         dockerHandler docker = new dockerHandler();
-        String vulnerability = docker.saveFile(content);
+        docker.saveFile(content);
+        ArrayList<Vulnerability> vulnerabilities = docker.runBanditOnFile();
 //        System.out.println(content);
         String newContent = "";
         writer.println("<h1>Initial Code: " + content + "</h1>");
         writer.println("</html>");
-        if(vulnerability != ""){
-            newContent = handler.regenerateForVulnerability(content, vulnerability);
+        if(!vulnerabilities.isEmpty()) {
+            newContent = handler.regenerateForVulnerability(content, vulnerabilities);
             String newCode = responseHandler.extractCode(newContent);
             newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
             writer.println("<h1>fixed code: " + newCode + "</h1>");
