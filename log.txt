@@ -1,0 +1,1 @@
+had issues with bandit. syntax error while parsing ast from file. fixed by stripping html tags from the python, this issue did is new today, unsure of what changed. 30/01/2025
