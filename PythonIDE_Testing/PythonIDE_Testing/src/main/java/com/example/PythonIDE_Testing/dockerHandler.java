@@ -13,13 +13,12 @@ public class dockerHandler {
 
     public dockerHandler() {}
 
-    public void saveFile(String pythonCode) {
+    public void saveFile(String pythonCode, String filePath) {
 
 //            String strippedPythonCode = pythonCode;
             String strippedPythonCode = stripHtmlTags(pythonCode);
 
             String containerName = "pythonide_testing-app-1";
-            String filePath = "/tmp/script.py";
 
 
             try {
@@ -39,10 +38,10 @@ public class dockerHandler {
 
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        System.out.println("Output: " + line);
+//                        System.out.println("Output: " + line);
                     }
                     while ((line = errorReader.readLine()) != null) {
-                        System.err.println("Error: " + line);
+//                        System.err.println("Error: " + line);
                     }
                 }
 
@@ -62,14 +61,14 @@ public class dockerHandler {
 
 
     //method that calls bandit on the file
-    public ArrayList<Vulnerability> runBanditOnFile() {
+    public ArrayList<Vulnerability> runBanditOnFile(String filepath) {
         ArrayList<Vulnerability> vulnerabilities = new ArrayList<Vulnerability>();
 
         try {
             ProcessBuilder banditProcess = new ProcessBuilder(
                     "docker", "exec", "-i", "pythonide_testing-app-1",
 //                    "bandit", "-r", "/tmp/script.py", "-v", "-f", "json"
-                    "bandit", "-r", "/tmp/script.py", "-v"
+                    "bandit", "-r", filepath, "-v"
 
             );
             Process bandit = banditProcess.start();
@@ -84,8 +83,7 @@ public class dockerHandler {
             String vulnerability = "";
             int i = 1;
             while ((line = reader.readLine()) != null) {
-                System.out.println(("Line " + i));
-                System.out.println(line);
+
 
                 if(line.contains("Issue: [")){
 
@@ -93,8 +91,6 @@ public class dockerHandler {
                     for(int j = 0; j < 7; j++){
                         i++;
                         line = reader.readLine();
-                        System.out.println(("Line " + i));
-                        System.out.println(line);
                         vulnerability += line;
                         vulnerability += "\n";
                     }
@@ -106,7 +102,12 @@ public class dockerHandler {
 
                 i++;
             }
-            System.out.println(vulnerability);
+            if(vulnerabilities.toString().equals("[]")){
+                System.out.println("No vulnerabilities found");
+            }else{
+                System.out.println(vulnerabilities.toString());
+
+            }
 
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
@@ -142,7 +143,7 @@ public class dockerHandler {
     }
 
     public Vulnerability parseVulnerability(String vulnString){
-        System.out.println(vulnString);
+//        System.out.println(vulnString);
 
 //        Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.   Severity: Medium   Confidence: Low
 //        CWE: CWE-89 (https://cwe.mitre.org/data/definitions/89.html)
@@ -157,11 +158,11 @@ public class dockerHandler {
         String moreInfo = vulnString.substring(vulnString.indexOf("More Info:") + 10, vulnString.indexOf("Location:"));
         String codeSnippet = vulnString.substring(vulnString.indexOf("Location:") + 10);
 
-        System.out.println("Description: " + description);
-        System.out.println("Severity: " + severity);
-        System.out.println("CWE: " + CWE);
-        System.out.println("More Info: " + moreInfo);
-        System.out.println("Code Snippet: " + codeSnippet);
+//        System.out.println("Description: " + description);
+//        System.out.println("Severity: " + severity);
+//        System.out.println("CWE: " + CWE);
+//        System.out.println("More Info: " + moreInfo);
+//        System.out.println("Code Snippet: " + codeSnippet);
         Vulnerability vulnerability = new Vulnerability(description, severity, Integer.parseInt(CWE), codeSnippet, moreInfo);
         return vulnerability;
     }
@@ -175,7 +176,7 @@ public class dockerHandler {
             return matcher.group(1);
         }
 
-        return null; // Return null if no CWE number is found
+        return null;
     }
 
 

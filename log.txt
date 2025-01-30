@@ -1,1 +1,2 @@
-had issues with bandit. syntax error while parsing ast from file. fixed by stripping html tags from the python, this issue did is new today, unsure of what changed. 30/01/2025
+had issues with bandit. syntax error while parsing ast from file. fixed by stripping html tags from the python, this issue did is new today, unsure of what changed. 30/01/2025 - morning
+had to add more instructions to the system prompt, I found this user prompt: "generate a flask app that gets a users name from their input, displays it on the page, then checks if it is in an sql database and returns the result." led to the llm breaking the code into 2 different chunks, with an explanation between them, which broke some stuff. 30/01/2025 - afternoon

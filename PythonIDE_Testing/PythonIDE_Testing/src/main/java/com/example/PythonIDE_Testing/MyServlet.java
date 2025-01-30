@@ -27,34 +27,67 @@ public class MyServlet extends HttpServlet {
         writer.println("<h1>Prompt: " + userprompt + "</h1>");
         writer.println("<h1>parameters: " + parameter + "</h1>");
         writer.println("<h1>example output(s): " + exampleOutputs + "</h1>");
-        codeGenerator handler = new codeGenerator(userprompt, parameter, exampleOutputs);
+        codeGenerator generator = new codeGenerator(userprompt, parameter, exampleOutputs);
 //        String response = handler.callLM(userprompt);
-        String callresponse = handler.callLM(userprompt);
+        String callresponse = generator.callLM(userprompt);
         ResponseHandler responseHandler = new ResponseHandler();
         String content = responseHandler.extractCode(callresponse);
         content = "<pre>" + content.replace("\n", "<br>") + "</pre>";
 //        String content = responseHandler.extractContent(callresponse);
-        dockerHandler docker = new dockerHandler();
-        docker.saveFile(content);
-        ArrayList<Vulnerability> vulnerabilities = docker.runBanditOnFile();
-//        System.out.println(content);
-        String newContent = "";
-        writer.println("<h1>Initial Code: " + content + "</h1>");
-        writer.println("</html>");
-        if(!vulnerabilities.isEmpty()) {
-            newContent = handler.regenerateForVulnerability(content, vulnerabilities);
-            String newCode = responseHandler.extractCode(newContent);
-            newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
-            writer.println("<h1>fixed code: " + newCode + "</h1>");
-            writer.println("</html>");
-        }
+        runTests(generator, responseHandler, content, response);
+//        docker.saveFile(content);
+//        ArrayList<Vulnerability> vulnerabilities = docker.runBanditOnFile();
+////        System.out.println(content);
+//        String newContent = "";
+//        writer.println("<h1>Initial Code: " + content + "</h1>");
+//        writer.println("</html>");
+//        if(!vulnerabilities.isEmpty()) {
+//            newContent = generator.regenerateForVulnerability(content, vulnerabilities);
+//            String newCode = responseHandler.extractCode(newContent);
+//            newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
+//            writer.println("<h1>fixed code: " + newCode + "</h1>");
+//            writer.println("</html>");
+//        }
 
         writer.close();
     }
 
 
 
+    public void runTests(codeGenerator generator, ResponseHandler responseHandler, String content, HttpServletResponse response) {
+        dockerHandler docker = new dockerHandler();
+        try {
+            PrintWriter writer = response.getWriter();
+            String filePath = "/tmp/script.py";
+            docker.saveFile(content, filePath);
+            ArrayList<Vulnerability> vulnerabilities = docker.runBanditOnFile(filePath);
+            String newContent = "";
+            writer.println("<h1>Initial Code: " + content + "</h1>");
+            writer.println("</html>");
 
+            while(!vulnerabilities.isEmpty() && (generator.getIterationCount() <= generator.iterationCap)) {
+                generator.incrementIterationCount();
+                newContent = generator.regenerateForVulnerability(content, vulnerabilities);
+                String newCode = responseHandler.extractCode(newContent);
+                filePath = "/tmp/script" + generator.getIterationCount() + ".py";
+                docker.saveFile(newCode, filePath);
+                vulnerabilities = docker.runBanditOnFile(filePath);
+                newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
+                writer.println("<h1>Times regenerated: " + generator.getIterationCount() + "</h1>");
+                writer.println("<h1>fixed code: " + newCode + "</h1>");
+                writer.println("</html>");
+            }
+            if(generator.getIterationCount() > generator.iterationCap) {
+                writer.println("<h1>Iteration cap reached</h1>");
+                writer.println("</html>");
+            }
+
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
 
 }
 
