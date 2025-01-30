@@ -4,12 +4,14 @@ package com.example.PythonIDE_Testing;
 import java.io.*;
 
 
+
 public class dockerHandler {
 
     public dockerHandler() {}
 
-    public void saveFile(String pythonCode) {
+    public String saveFile(String pythonCode) {
         try {
+            String strippedPythonCode = stripHtmlTags(pythonCode);
             String containerName = "pythonide_testing-app-1";
             String filePath = "/tmp/script.py";
 
@@ -22,7 +24,7 @@ public class dockerHandler {
                 Process process = Runtime.getRuntime().exec(command);
 
                 try (OutputStream outputStream = process.getOutputStream()) {
-                    outputStream.write(pythonCode.getBytes());
+                    outputStream.write(strippedPythonCode.getBytes());
                     outputStream.flush();
                 }
 
@@ -48,32 +50,67 @@ public class dockerHandler {
                 e.printStackTrace();
             }
 
+//            ProcessBuilder banditProcess = new ProcessBuilder(
+//                    "docker", "exec", "-i", "pythonide_testing-app-1",
+//                    "bandit", "-r", "/tmp/script.py"
+//            );
             ProcessBuilder banditProcess = new ProcessBuilder(
                     "docker", "exec", "-i", "pythonide_testing-app-1",
-                    "bandit", "-r", "/tmp/script.py"
+//                    "bandit", "-r", "/tmp/script.py", "-v", "-f", "json"
+                    "bandit", "-r", "/tmp/script.py", "-v"
+
             );
             Process bandit = banditProcess.start();
-            int banditExitCode = bandit.waitFor();
-            if (banditExitCode != 0) {
-                System.err.println("Error: Bandit analysis failed. Exit code: " + banditExitCode);
-                BufferedReader errorReader = new BufferedReader(new InputStreamReader(bandit.getErrorStream()));
-                String errorLine;
-                while ((errorLine = errorReader.readLine()) != null) {
-                    System.err.println(errorLine);
-                }
-                return;
-            }
+            bandit.waitFor();
+
+
+
+
+
+//            int banditExitCode = bandit.waitFor();
+//            if (banditExitCode != 0) {
+//                System.err.println("Error: Bandit analysis failed. Exit code: " + banditExitCode);
+//                BufferedReader errorReader = new BufferedReader(new InputStreamReader(bandit.getErrorStream()));
+//                String errorLine;
+//                while ((errorLine = errorReader.readLine()) != null) {
+//                    System.err.println(errorLine);
+//                }
+//                return;
+//            }
             System.out.println("Bandit analysis completed successfully.");
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(bandit.getInputStream()));
             String line;
+            String vulnerability = "";
+            int i = 1;
             while ((line = reader.readLine()) != null) {
+                System.out.println(("Line " + i));
                 System.out.println(line);
+
+                if(line.contains("Issue: [")){
+
+                    vulnerability += line;
+                        for(int j = 0; j < 7; j++){
+                            i++;
+                            line = reader.readLine();
+                            System.out.println(("Line " + i));
+                            System.out.println(line);
+                            vulnerability += line;
+                            vulnerability += "\n";
+                            parseVulnerability(vulnerability);
+                        }
+
+                }
+
+                i++;
             }
+            System.out.println(vulnerability);
+            return vulnerability;
 
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
+        return null;
     }
 
 
@@ -83,8 +120,9 @@ public class dockerHandler {
             System.out.println("Running Bandit on file: " + filePath);
             ProcessBuilder banditProcess = new ProcessBuilder(
                     "docker", "exec", "-i", "pythonide_testing-app-1",
-                    "bandit", "-r", filePath
+                    "bandit", "-r", filePath, "-v", "-f", "json"
             );
+//            banditProcess.redirectErrorStream(true);
             Process bandit = banditProcess.start();
             bandit.waitFor();
             System.out.println("Bandit analysis completed");
@@ -126,8 +164,18 @@ public class dockerHandler {
         return result.toString();
     }
 
+    public void parseVulnerability(String vulnString){
+        System.out.println(vulnString);
 
 
-    // check for errors
+
+
+
+//        Vulnerability vulnerability = new Vulnerability();
+    }
+    public static String stripHtmlTags(String input) {
+        return input.replaceAll("<[^>]+>", "").trim();
+    }
+
 
 }

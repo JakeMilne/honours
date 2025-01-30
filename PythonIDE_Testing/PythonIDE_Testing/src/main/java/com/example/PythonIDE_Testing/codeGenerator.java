@@ -51,6 +51,51 @@ public class codeGenerator {
             Map<String, Object> requestBody = Map.of(
                     "model", "meta-llama-3.1-8b-instruct",
                     "messages", List.of(
+                            Map.of("role", "system", "content", "You are a coding assistant that creates python code. Only Create python 3.9 code, offer no explanation, do not include anything in your answer other than python code. Only return 1 piece of code. Tag all code with ```python. DO not create any code that is not specified by the user"),
+                            Map.of("role", "user", "content", prompt)
+                    )
+            );
+            String jsonBody = gson.toJson(requestBody);
+
+            System.out.println("Request JSON Body: " + jsonBody);
+
+            HttpClient client = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .build();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+//            System.out.println("Response Status Code: " + response.statusCode());
+//            System.out.println("Response Body: " + response.body());
+
+            if (response.statusCode() != 200) {
+                return String.format("{\"error\": \"API responded with status code %d: %s\"}",
+                        response.statusCode(), response.body());
+            }
+
+            return response.body();
+
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return "{\"error\": \"Failed to communicate with LLM service: " + e.getMessage() + "\"}";
+        }
+    }
+
+
+    public String regenerateForVulnerability(String code, String vulnerability){
+        try {
+            String url = "http://localhost:1234/v1/chat/completions";
+            String prompt = "Fix the following vulnerability: \n" + vulnerability + "\n found in this code: " + code;
+            Gson gson = new Gson();
+            Map<String, Object> requestBody = Map.of(
+                    "model", "meta-llama-3.1-8b-instruct",
+                    "messages", List.of(
                             Map.of("role", "system", "content", "You are a coding assistant that creates python code. Only Create python code, offer no explanation, do not include anything in your answer other than python code. Only return 1 piece of code. Tag all code with ```python. DO not create any code that is not specified by the user"),
                             Map.of("role", "user", "content", prompt)
                     )
@@ -71,8 +116,6 @@ public class codeGenerator {
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
-            System.out.println("Response Status Code: " + response.statusCode());
-            System.out.println("Response Body: " + response.body());
 
             if (response.statusCode() != 200) {
                 return String.format("{\"error\": \"API responded with status code %d: %s\"}",
@@ -85,5 +128,11 @@ public class codeGenerator {
             e.printStackTrace();
             return "{\"error\": \"Failed to communicate with LLM service: " + e.getMessage() + "\"}";
         }
+    }
+    public void incrementIterationCount(){
+        this.iterationCount++;
+    }
+    public int getIterationCount(){
+        return this.iterationCount;
     }
 }

@@ -31,15 +31,29 @@ public class MyServlet extends HttpServlet {
         String callresponse = handler.callLM(userprompt);
         ResponseHandler responseHandler = new ResponseHandler();
         String content = responseHandler.extractCode(callresponse);
+        content = "<pre>" + content.replace("\n", "<br>") + "</pre>";
 //        String content = responseHandler.extractContent(callresponse);
         dockerHandler docker = new dockerHandler();
-        docker.saveFile(content);
-        System.out.println(content);
-
-        writer.println("<h1>Code: " + content + "</h1>");
+        String vulnerability = docker.saveFile(content);
+//        System.out.println(content);
+        String newContent = "";
+        writer.println("<h1>Initial Code: " + content + "</h1>");
         writer.println("</html>");
+        if(vulnerability != ""){
+            newContent = handler.regenerateForVulnerability(content, vulnerability);
+            String newCode = responseHandler.extractCode(newContent);
+            newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
+            writer.println("<h1>fixed code: " + newCode + "</h1>");
+            writer.println("</html>");
+        }
+
         writer.close();
     }
+
+
+
+
+
 }
 
 //python response looks like
