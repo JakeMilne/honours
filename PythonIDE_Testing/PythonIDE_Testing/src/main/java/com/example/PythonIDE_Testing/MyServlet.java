@@ -14,12 +14,13 @@ import java.util.ArrayList;
 @WebServlet("/MyServlet")
 public class MyServlet extends HttpServlet {
 
+    private ArrayList<Iteration> iterations = new ArrayList<Iteration>();
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String userprompt = request.getParameter("userprompt");
         String parameter = request.getParameter("parameters");
         String exampleOutputs = request.getParameter("exampleOutputs");
-
 
         response.setContentType("text/html");
         PrintWriter writer = response.getWriter();
@@ -27,43 +28,51 @@ public class MyServlet extends HttpServlet {
         writer.println("<h1>Prompt: " + userprompt + "</h1>");
         writer.println("<h1>parameters: " + parameter + "</h1>");
         writer.println("<h1>example output(s): " + exampleOutputs + "</h1>");
+
         codeGenerator generator = new codeGenerator(userprompt, parameter, exampleOutputs);
-//        String response = handler.callLM(userprompt);
         String callresponse = generator.callLM(userprompt);
         ResponseHandler responseHandler = new ResponseHandler();
         String content = responseHandler.extractCode(callresponse);
         content = "<pre>" + content.replace("\n", "<br>") + "</pre>";
-//        String content = responseHandler.extractContent(callresponse);
-        runTests(generator, responseHandler, content, response);
-//        docker.saveFile(content);
-//        ArrayList<Vulnerability> vulnerabilities = docker.runBanditOnFile();
-////        System.out.println(content);
-//        String newContent = "";
-//        writer.println("<h1>Initial Code: " + content + "</h1>");
-//        writer.println("</html>");
-//        if(!vulnerabilities.isEmpty()) {
-//            newContent = generator.regenerateForVulnerability(content, vulnerabilities);
-//            String newCode = responseHandler.extractCode(newContent);
-//            newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
-//            writer.println("<h1>fixed code: " + newCode + "</h1>");
-//            writer.println("</html>");
-//        }
+
+        runTests(generator, responseHandler, content, response, writer);
+
+        int index = iterations.size() - 1;
+        System.out.println("Iterations size: " + iterations.size());
+
+        writer.println("<h1>HELLO</h1>");
+
+        writer.println("<h2>Iteration " + (index + 1) + "</h2>");
+        writer.println(iterations.get(index).getCode());
+        System.out.println("Iteration code: " + iterations.get(index).getCode());
+
+                if (index > 0) {
+            writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous</a> ");
+        }
+        if (index < iterations.size() - 1) {
+            writer.println("<a href='/MyServlet?index=" + (index + 1) + "'>Next</a>");
+        }
+
 
         writer.close();
     }
 
+//        if (index > 0) {
+//            writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous</a> ");
+//        }
+//        if (index < iterations.size() - 1) {
+//            writer.println("<a href='/MyServlet?index=" + (index + 1) + "'>Next</a>");
+//        }
 
-
-    public void runTests(codeGenerator generator, ResponseHandler responseHandler, String content, HttpServletResponse response) {
+    public void runTests(codeGenerator generator, ResponseHandler responseHandler, String content,
+                         HttpServletResponse response, PrintWriter writer) {
         dockerHandler docker = new dockerHandler();
-        try {
-            PrintWriter writer = response.getWriter();
+
             String filePath = "/tmp/script.py";
             docker.saveFile(content, filePath);
             ArrayList<Vulnerability> vulnerabilities = docker.runBanditOnFile(filePath);
+            iterations.add(new Iteration(content, vulnerabilities));
             String newContent = "";
-            writer.println("<h1>Initial Code: " + content + "</h1>");
-            writer.println("</html>");
 
             while(!vulnerabilities.isEmpty() && (generator.getIterationCount() <= generator.iterationCap)) {
                 generator.incrementIterationCount();
@@ -73,19 +82,13 @@ public class MyServlet extends HttpServlet {
                 docker.saveFile(newCode, filePath);
                 vulnerabilities = docker.runBanditOnFile(filePath);
                 newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
-                writer.println("<h1>Times regenerated: " + generator.getIterationCount() + "</h1>");
-                writer.println("<h1>fixed code: " + newCode + "</h1>");
-                writer.println("</html>");
-            }
-            if(generator.getIterationCount() > generator.iterationCap) {
-                writer.println("<h1>Iteration cap reached</h1>");
-                writer.println("</html>");
+                iterations.add(new Iteration(newCode, vulnerabilities));
             }
 
-            writer.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+            if(generator.getIterationCount() > generator.iterationCap) {
+                writer.println("<h1>Iteration cap reached</h1>");
+            }
+
 
     }
 
