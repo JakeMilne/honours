@@ -18,6 +18,9 @@ public class MyServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+
+        //storing user input
         String userprompt = request.getParameter("userprompt");
         String parameter = request.getParameter("parameters");
         String exampleOutputs = request.getParameter("exampleOutputs");
@@ -25,18 +28,24 @@ public class MyServlet extends HttpServlet {
         response.setContentType("text/html");
         PrintWriter writer = response.getWriter();
         writer.println("<html>");
+        //showing the users input, was used for testing
         writer.println("<h1>Prompt: " + userprompt + "</h1>");
         writer.println("<h1>parameters: " + parameter + "</h1>");
         writer.println("<h1>example output(s): " + exampleOutputs + "</h1>");
 
+        //code generator object handles LLM calls
         codeGenerator generator = new codeGenerator(userprompt, parameter, exampleOutputs);
         String callresponse = generator.callLM(userprompt);
+
+        //response handler object parses LLM responses
         ResponseHandler responseHandler = new ResponseHandler();
         String content = responseHandler.extractCode(callresponse);
         content = "<pre>" + content.replace("\n", "<br>") + "</pre>";
 
+        //runTests method deals with the dockerHandler object and its methods
         runTests(generator, responseHandler, content, response, writer);
 
+        //some stuff to display the different iterations of the code, absolutely not done whatsoever
         int index = iterations.size() - 1;
         System.out.println("Iterations size: " + iterations.size());
 
@@ -57,16 +66,14 @@ public class MyServlet extends HttpServlet {
         writer.close();
     }
 
-//        if (index > 0) {
-//            writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous</a> ");
-//        }
-//        if (index < iterations.size() - 1) {
-//            writer.println("<a href='/MyServlet?index=" + (index + 1) + "'>Next</a>");
-//        }
+
 
     public void runTests(codeGenerator generator, ResponseHandler responseHandler, String content,
                          HttpServletResponse response, PrintWriter writer) {
-        dockerHandler docker = new dockerHandler();
+
+            //dockerHandler object deals with saving files and doing stuff such as calling bandit on files
+
+            dockerHandler docker = new dockerHandler();
 
             String filePath = "/tmp/script.py";
             docker.saveFile(content, filePath);
@@ -94,12 +101,3 @@ public class MyServlet extends HttpServlet {
 
 }
 
-//python response looks like
-
-//```python
-//# This is a comment - anything after the "#" symbol is ignored by the interpreter
-//
-//# The print function is used to output text to the screen
-//print("Hello, World!")
-//```
-// can parse using the ```python part

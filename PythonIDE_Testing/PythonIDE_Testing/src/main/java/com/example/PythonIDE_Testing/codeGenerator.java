@@ -1,13 +1,4 @@
 package com.example.PythonIDE_Testing;
-//
-//could be renamed to codeGenerator, codeGenerator instance can then be passed between components
-//have a field for initial prompt
-//array of drafts
-//array of parameters
-//array of example outputs
-//value which caps iterations
-//could track amount of iterations + issues at each iteration
-//maybe an ID of some sort to store multiple files
 
 
 
@@ -59,7 +50,6 @@ public class codeGenerator {
             );
             String jsonBody = gson.toJson(requestBody);
 
-//            System.out.println("Request JSON Body: " + jsonBody);
 
             HttpClient client = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
