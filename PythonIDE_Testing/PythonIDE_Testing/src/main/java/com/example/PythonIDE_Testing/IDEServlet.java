@@ -94,8 +94,8 @@ public class IDEServlet extends HttpServlet {
         String code = request.getParameter("usercode");
         System.out.println("Reformatted code: " + code);
 
-        writer.println("<h2>Submitted Code:</h2>");
-        writer.println("<pre>" + code.replace("<", "&lt;").replace(">", "&gt;") + "</pre>");
+//        writer.println("<h2>Submitted Code:</h2>");
+//        writer.println("<pre>" + code.replace("<", "&lt;").replace(">", "&gt;") + "</pre>");
 
         writer.println("<a href=\"/userIDE\">Go Back</a>");
         writer.close();
