@@ -42,8 +42,13 @@ public class MyServlet extends HttpServlet {
         String content = responseHandler.extractCode(callresponse);
         content = "<pre>" + content.replace("\n", "<br>") + "</pre>";
 
+        //setting session variables
+        request.getSession().setAttribute("codeGenerator", generator);
+        request.getSession().setAttribute("responseHandler", responseHandler);
+
+
         //runTests method deals with the dockerHandler object and its methods
-        runTests(generator, responseHandler, content, response, writer);
+        runTests(generator, responseHandler, content, response, writer, request);
 
         //some stuff to display the different iterations of the code, absolutely not done whatsoever
         int index = iterations.size() - 1;
@@ -55,7 +60,7 @@ public class MyServlet extends HttpServlet {
         writer.println(iterations.get(index).getCode());
         System.out.println("Iteration code: " + iterations.get(index).getCode());
 
-                if (index > 0) {
+        if (index > 0) {
             writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous</a> ");
         }
         if (index < iterations.size() - 1) {
@@ -70,7 +75,7 @@ public class MyServlet extends HttpServlet {
         writer.println("<form action=\"/userIDE\" method=\"POST\">");
         writer.println("<label for=\"usercode\">code:</label><br>");
         writer.println("<textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\">" + code + "</textarea><br>");
-        writer.println("<input type=\"submit\" value=\"Submit\">");
+        writer.println("<input type=\"submit\" value=\"Check\">");
         writer.println("</form>");
         writer.close();
     }
@@ -78,11 +83,15 @@ public class MyServlet extends HttpServlet {
 
 
     public void runTests(codeGenerator generator, ResponseHandler responseHandler, String content,
-                         HttpServletResponse response, PrintWriter writer) {
+                         HttpServletResponse response, PrintWriter writer, HttpServletRequest request) {
 
             //dockerHandler object deals with saving files and doing stuff such as calling bandit on files
 
             dockerHandler docker = new dockerHandler();
+
+            //adding docker to session variables
+            request.getSession().setAttribute("dockerHandler", docker);
+
 
             String filePath = "/tmp/script.py";
             docker.saveFile(content, filePath);

@@ -58,7 +58,50 @@ public class dockerHandler {
 
 
     }
+    public void saveUserFile(String pythonCode, String filePath) {
 
+
+
+        String containerName = "pythonide_testing-app-1";
+
+
+        try {
+            String[] command = {
+                    "docker", "exec", "-i", containerName, "sh", "-c", "cat > " + filePath
+            };
+
+            Process process = Runtime.getRuntime().exec(command);
+
+            try (OutputStream outputStream = process.getOutputStream()) {
+                outputStream.write(pythonCode.getBytes());
+                outputStream.flush();
+            }
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+//                        System.out.println("Output: " + line);
+                }
+                while ((line = errorReader.readLine()) != null) {
+//                        System.err.println("Error: " + line);
+                }
+            }
+
+            int exitCode = process.waitFor();
+            if (exitCode == 0) {
+                System.out.println("Python code successfully saved to the container!");
+            } else {
+                System.err.println("Failed to save the Python code. Exit code: " + exitCode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+
+    }
 
     //method that calls bandit on the file
     public ArrayList<Vulnerability> runBanditOnFile(String filepath) {
