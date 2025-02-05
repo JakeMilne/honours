@@ -62,7 +62,16 @@ public class MyServlet extends HttpServlet {
             writer.println("<a href='/MyServlet?index=" + (index + 1) + "'>Next</a>");
         }
 
+        String code = iterations.get(index).getCode().replace("<br>", "\n").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 
+
+
+        System.out.println("reformatted code: " + code);
+        writer.println("<form action=\"/userIDE\" method=\"POST\">");
+        writer.println("<label for=\"usercode\">code:</label><br>");
+        writer.println("<textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\">" + code + "</textarea><br>");
+        writer.println("<input type=\"submit\" value=\"Submit\">");
+        writer.println("</form>");
         writer.close();
     }
 
