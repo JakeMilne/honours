@@ -19,7 +19,6 @@ public class MyServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-
         //storing user input
         String userprompt = request.getParameter("userprompt");
         String parameter = request.getParameter("parameters");
@@ -46,7 +45,6 @@ public class MyServlet extends HttpServlet {
         request.getSession().setAttribute("codeGenerator", generator);
         request.getSession().setAttribute("responseHandler", responseHandler);
 
-
         //runTests method deals with the dockerHandler object and its methods
         runTests(generator, responseHandler, content, response, writer, request);
 
@@ -54,20 +52,15 @@ public class MyServlet extends HttpServlet {
         int index = iterations.size() - 1;
         System.out.println("Iterations size: " + iterations.size());
 
-        writer.println("<h1>HELLO</h1>");
+//        writer.println("<h1>HELLO</h1>");
 
         writer.println("<h2>Iteration " + (index + 1) + "</h2>");
-        writer.println(iterations.get(index).getCode());
-        System.out.println("Iteration code: " + iterations.get(index).getCode());
+//        writer.println(iterations.get(index).getCode());
+//        System.out.println("Iteration code: " + iterations.get(index).getCode());
 
-        if (index > 0) {
-            writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous</a> ");
-        }
-        if (index < iterations.size() - 1) {
-            writer.println("<a href='/MyServlet?index=" + (index + 1) + "'>Next</a>");
-        }
 
-        String code = iterations.get(index).getCode().replace("<br>", "\n").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+
+        String code = iterations.get(index).getCode().replace("<br>", "\n").replace("<pre>", "").replace("</pre>", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 
 
 
@@ -77,9 +70,68 @@ public class MyServlet extends HttpServlet {
         writer.println("<textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\">" + code + "</textarea><br>");
         writer.println("<input type=\"submit\" value=\"Check\">");
         writer.println("</form>");
+
+
+        if (index > 0) {
+            writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous iteration</a> ");
+        }
+        if (index < iterations.size() - 1) {
+            writer.println("<a href='/MyServlet?index=" + (index + 1) + "'>Next iteration</a>");
+        }
+
+
         writer.close();
     }
 
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String indexParam = request.getParameter("index");
+        int index = (indexParam != null) ? Integer.parseInt(indexParam) : iterations.size() - 1;
+
+        // Assuming you also want to retrieve other parameters like userprompt, etc. in GET requests
+        String userprompt = request.getParameter("userprompt");
+        String parameter = request.getParameter("parameters");
+        String exampleOutputs = request.getParameter("exampleOutputs");
+
+        response.setContentType("text/html");
+        PrintWriter writer = response.getWriter();
+        writer.println("<html>");
+        writer.println("<h1>Prompt: " + userprompt + "</h1>");
+        writer.println("<h1>Parameters: " + parameter + "</h1>");
+        writer.println("<h1>Example output(s): " + exampleOutputs + "</h1>");
+        if(iterations.get(index).getVulnerabilities().size() > 0) {
+            writer.println("<h1>Vulnerabilities Detected:</h1>");
+            writer.println("<ul>");
+            for (Vulnerability vuln : iterations.get(index).getVulnerabilities()) {
+                writer.println("<li>" + vuln.getDescription() + "</li>");
+            }
+            writer.println("</ul>");
+        } else {
+            writer.println("<h1>No Vulnerabilities Detected</h1>");
+        }
+
+
+        writer.println("<h2>Iteration " + (index + 1) + "</h2>");
+        String code = iterations.get(index).getCode().replace("<br>", "\n").replace("<pre>", "").replace("</pre>", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
+
+
+        writer.println("<form action=\"/userIDE\" method=\"POST\">");
+        writer.println("<label for=\"usercode\">code:</label><br>");
+        writer.println("<textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\">" + code + "</textarea><br>");
+        writer.println("<input type=\"submit\" value=\"Check\">");
+        writer.println("</form>");
+//        writer.println(iterations.get(index).getCode());
+
+        if (index > 0) {
+            writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous</a> ");
+        }
+        if (index < iterations.size() - 1) {
+            writer.println("<a href='/MyServlet?index=" + (index + 1) + "'>Next</a>");
+        }
+
+        writer.close();
+    }
 
 
     public void runTests(codeGenerator generator, ResponseHandler responseHandler, String content,
