@@ -65,12 +65,15 @@ public class MyServlet extends HttpServlet {
 
 
         System.out.println("reformatted code: " + code);
+        String sessionId = request.getSession().getId(); // Get the session ID
         writer.println("<form action=\"/userIDE\" method=\"POST\">");
+        writer.println("<input type=\"hidden\" name=\"session_id\" value=\"" + sessionId + "\">");
         writer.println("<label for=\"usercode\">code:</label><br>");
         writer.println("<textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\">" + code + "</textarea><br>");
         writer.println("<input type=\"submit\" value=\"Check\">");
         writer.println("</form>");
 
+//        Session webSocketSession = WebSocket.getSessionById(webSocketSessionId);
 
         if (index > 0) {
             writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous iteration</a> ");
@@ -89,7 +92,6 @@ public class MyServlet extends HttpServlet {
         String indexParam = request.getParameter("index");
         int index = (indexParam != null) ? Integer.parseInt(indexParam) : iterations.size() - 1;
 
-        // Assuming you also want to retrieve other parameters like userprompt, etc. in GET requests
         String userprompt = request.getParameter("userprompt");
         String parameter = request.getParameter("parameters");
         String exampleOutputs = request.getParameter("exampleOutputs");

@@ -8,6 +8,10 @@ import java.io.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.ArrayList;
+import javax.websocket.Session;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
 
 public class dockerHandler {
 
@@ -233,6 +237,115 @@ public class dockerHandler {
 
         return text;
     }
+//    public static void runFile(String filename, Session session) {
+////        Process process = null;
+////        BufferedReader reader = null;
+////        BufferedReader errorReader = null;
+////        BufferedWriter writer = null;
+////
+////        try {
+////            ProcessBuilder processBuilder = new ProcessBuilder(
+////                    "docker", "exec", "-i", "pythonide_testing-app-1",
+////                    "python3", filename
+////            );
+////            process = processBuilder.start();
+////
+////            writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
+////            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+////            errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+////
+////            final BufferedWriter finalWriter = writer; // Declare as final
+////            String line;
+////            while ((line = reader.readLine()) != null) {
+////                session.getBasicRemote().sendText(line);
+////            }
+////
+////            // Capture and send any errors (if any)
+////            String errorLine;
+////            while ((errorLine = errorReader.readLine()) != null) {
+////                session.getBasicRemote().sendText("Error: " + errorLine);
+////            }
+////
+////            // Handle user input
+////            session.addMessageHandler(String.class, message -> {
+////                try {
+////                    finalWriter.write(message);
+////                    finalWriter.newLine();
+////                    finalWriter.flush();
+////                } catch (IOException e) {
+////                    e.printStackTrace();
+////                }
+////            });
+////
+////            int exitCode = process.waitFor();
+////            System.out.println("File execution completed with exit code: " + exitCode);
+////
+////        } catch (IOException | InterruptedException e) {
+////            e.printStackTrace();
+////        } finally {
+////            try {
+////                if (reader != null) {
+////                    reader.close();
+////                }
+////                if (errorReader != null) {
+////                    errorReader.close();
+////                }
+////                if (writer != null) {
+////                    writer.close();
+////                }
+////            } catch (IOException e) {
+////                e.printStackTrace();
+////            }
+////        }
+//        ExecutorService executor = Executors.newSingleThreadExecutor();
+//        executor.submit(() -> {
+//            try {
+//                ProcessBuilder builder = new ProcessBuilder("python3", filePath);
+//                Process process = builder.start();
+//                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+//                String line;
+//
+//                while ((line = reader.readLine()) != null) {
+//                    if (webSocketSession.isOpen()) {
+//                        webSocketSession.getBasicRemote().sendText(line);
+//                    }
+//                }
+//
+//                process.waitFor();
+//                reader.close();
+//            } catch (Exception e) {
+//                e.printStackTrace();
+//            }
+//        });
+//    }
+public void runFile(String filePath, Session webSocketSession) {
+    ExecutorService executor = Executors.newSingleThreadExecutor();
+    executor.submit(() -> {
+        try {
+            // Run the Python file inside the container
+            ProcessBuilder builder = new ProcessBuilder(
+                    "docker", "exec", "-i", "pythonide_testing-app-1", "python3", filePath
+            );
+
+            Process process = builder.start();
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            String line;
+
+            // Read the output of the Python script and send it over the WebSocket
+            while ((line = reader.readLine()) != null) {
+                if (webSocketSession != null && webSocketSession.isOpen()) {
+                    webSocketSession.getBasicRemote().sendText(line);
+                }
+            }
+
+            process.waitFor();
+            reader.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    });
+}
+
 
 
 }

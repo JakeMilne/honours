@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python IDE</title>
+</head>
+<body>
+<h1>Python IDE</h1>
+<textarea id="code" rows="10" cols="50"></textarea>
+<button onclick="submitCode()">Run</button>
+
+<h2>Output:</h2>
+<pre id="output"></pre>
+
+<script>
+    let socket = new WebSocket("ws://localhost:8082/socket");
+    let sessionId = null;
+
+    // When WebSocket opens
+    socket.onopen = () => {
+        console.log("WebSocket opened");
+    };
+
+    // When a message (output) is received from the WebSocket server
+    socket.onmessage = (event) => {
+        let message = JSON.parse(event.data);
+
+        if (message.type === "session_id") {
+            sessionId = message.data;
+        } else if (message.type === "result") {
+            document.getElementById("output").innerText = message.data;
+        }
+    };
+
+    // Submit Python code to WebSocket server
+    function submitCode() {
+        let code = document.getElementById("code").value;
+
+        // Send the code to the server via WebSocket
+        if (sessionId) {
+            let message = {
+                type: "code",
+                data: code
+            };
+            socket.send(JSON.stringify(message));
+        }
+    }
+</script>
+</body>
+</html>
