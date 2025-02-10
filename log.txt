@@ -2,4 +2,4 @@ had issues with bandit. syntax error while parsing ast from file. fixed by strip
 had to add more instructions to the system prompt, I found this user prompt: "generate a flask app that gets a users name from their input, displays it on the page, then checks if it is in an sql database and returns the result." led to the llm breaking the code into 2 different chunks, with an explanation between them, which broke some stuff. 30/01/2025 - afternoon
 
 
-I tihnk I need to pass websocket instance in the dopost for userIDE
+I tihnk I need to pass websocket instance in the dopost for userIDE - maybe forget that, instead add logs for sessionID from request in the same function, that could be the issue
