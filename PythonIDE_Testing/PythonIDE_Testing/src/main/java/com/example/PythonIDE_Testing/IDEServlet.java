@@ -22,44 +22,13 @@ public class IDEServlet extends HttpServlet {
 
 
 
-//    @Override
-//    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-//        response.setContentType("text/html");
-//        request.getRequestDispatcher("/static/ide.html").forward(request, response);
-//
-//
-//
-//        PrintWriter writer = response.getWriter();
-//        String userCode = request.getParameter("usercode");
-//        String webSocketSessionId = request.getParameter("session_id"); // Retrieve session_id from request
-//
-//        if (webSocketSessionId == null) {
-//            writer.println("<h1>Error: WebSocket session ID is missing.</h1>");
-//            writer.close();
-//            return;
-//        }
-//
-//        dockerHandler docker = (dockerHandler) request.getSession().getAttribute("dockerHandler");
-//
-//        String filePath = "/tmp/userscript.py";
-//        docker.saveUserFile(userCode, filePath);
-//
-//        Session webSocketSession = WebSocket.getSessionById(webSocketSessionId);
-//        System.out.println("WebSocket session: " + webSocketSession);
-//
-//        if (webSocketSession != null) {
-//            docker.runFile(filePath, webSocketSession); // Pass WebSocket session to runFile method
-//        }
-//
-//
-//        writer.close();
-//    }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.setContentType("text/html");
 
         String userCode = request.getParameter("usercode");
+
         String webSocketSessionId = request.getParameter("session_id");
         System.out.println(webSocketSessionId);
         System.out.println(webSocketSessionId);
@@ -79,6 +48,8 @@ public class IDEServlet extends HttpServlet {
         String filePath = "/tmp/userscript.py";
         docker.saveUserFile(userCode, filePath);
 
+
+        //This used to return null so keep an eye on it if stuff breaks again
         Session webSocketSession = WebSocket.getSessionById(webSocketSessionId);
         System.out.println("WebSocket session: " + webSocketSession);
 
@@ -86,7 +57,10 @@ public class IDEServlet extends HttpServlet {
             docker.runFile(filePath, webSocketSession);
         }
 
+        //need to pass the users code somehow.
         response.sendRedirect("/ide.html");
     }
 
 }
+
+

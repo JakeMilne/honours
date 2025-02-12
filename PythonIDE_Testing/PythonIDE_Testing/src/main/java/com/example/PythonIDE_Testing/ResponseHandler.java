@@ -16,7 +16,7 @@ public class ResponseHandler {
             JsonArray choices = responseObject.getAsJsonArray("choices");
             if (choices != null && choices.size() > 0) {
                 JsonObject firstChoice = choices.get(0).getAsJsonObject();
-                JsonObject message = firstChoice.getAsJsonObject("message");
+                JsonObject message = firstChoice.getAsJsonObject("message"); //message is made of "role" and "content", we want content
                 return message.get("content").getAsString();
             }
 

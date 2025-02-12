@@ -27,7 +27,7 @@ public class MyServlet extends HttpServlet {
         response.setContentType("text/html");
         PrintWriter writer = response.getWriter();
         writer.println("<html>");
-        //showing the users input, was used for testing
+        //showing the users input, was/is used for testing
         writer.println("<h1>Prompt: " + userprompt + "</h1>");
         writer.println("<h1>parameters: " + parameter + "</h1>");
         writer.println("<h1>example output(s): " + exampleOutputs + "</h1>");
@@ -45,10 +45,17 @@ public class MyServlet extends HttpServlet {
         request.getSession().setAttribute("codeGenerator", generator);
         request.getSession().setAttribute("responseHandler", responseHandler);
 
+
+        // might need to clear iterations here.
+
+
+
+
+
         //runTests method deals with the dockerHandler object and its methods
         runTests(generator, responseHandler, content, response, writer, request);
 
-        //some stuff to display the different iterations of the code, absolutely not done whatsoever
+        //some stuff to display the different iterations of the code
         int index = iterations.size() - 1;
         System.out.println("Iterations size: " + iterations.size());
 
@@ -59,7 +66,7 @@ public class MyServlet extends HttpServlet {
 //        System.out.println("Iteration code: " + iterations.get(index).getCode());
 
 
-
+        //getting rid of pesky html tags
         String code = iterations.get(index).getCode().replace("<br>", "\n").replace("<pre>", "").replace("</pre>", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 
 
@@ -75,6 +82,7 @@ public class MyServlet extends HttpServlet {
 
 //        Session webSocketSession = WebSocket.getSessionById(webSocketSessionId);
 
+        // I think i need to pass the session id here when the users goes to a different iteration
         if (index > 0) {
             writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous iteration</a> ");
         }
@@ -96,6 +104,7 @@ public class MyServlet extends HttpServlet {
         String parameter = request.getParameter("parameters");
         String exampleOutputs = request.getParameter("exampleOutputs");
 
+        //showing stuff to the user
         response.setContentType("text/html");
         PrintWriter writer = response.getWriter();
         writer.println("<html>");
@@ -136,6 +145,7 @@ public class MyServlet extends HttpServlet {
     }
 
 
+    //running bandit on the code + saving different iterations
     public void runTests(codeGenerator generator, ResponseHandler responseHandler, String content,
                          HttpServletResponse response, PrintWriter writer, HttpServletRequest request) {
 

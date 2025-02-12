@@ -3,6 +3,7 @@ package com.example.PythonIDE_Testing;
 import java.util.ArrayList;
 
 
+//stores details for each "iteration" of the generation + regeneration phase.
 public class Iteration {
     private String code;
     private ArrayList<Vulnerability> vulnerabilities;

@@ -214,6 +214,7 @@ public class dockerHandler {
         return vulnerability;
     }
 
+    //parsing CWEs
     public static String extractCWE(String input) {
         String regex = "CWE:\\s*CWE-(\\d+)";
         Pattern pattern = Pattern.compile(regex);
@@ -331,7 +332,8 @@ public void runFile(String filePath, Session webSocketSession) {
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line;
 
-            // Read the output of the Python script and send it over the WebSocket
+            // Reading the output of the Python script and sending it over the WebSocket.
+            // Untested
             while ((line = reader.readLine()) != null) {
                 if (webSocketSession != null && webSocketSession.isOpen()) {
                     webSocketSession.getBasicRemote().sendText(line);

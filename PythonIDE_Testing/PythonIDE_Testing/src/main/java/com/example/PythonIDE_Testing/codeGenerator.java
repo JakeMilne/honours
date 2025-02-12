@@ -35,6 +35,7 @@ public class codeGenerator {
         this.iterationCount = 0;
     }
 
+    //getting the initial code from the LLM
     public static String callLM(String prompt) {
         try {
             String url = "http://localhost:1234/v1/chat/completions";
@@ -79,7 +80,7 @@ public class codeGenerator {
         }
     }
 
-
+    //regenerating code when theres a vulnerability
     public String regenerateForVulnerability(String code, ArrayList<Vulnerability> vulnerabilities){
         try {
 
@@ -130,6 +131,8 @@ public class codeGenerator {
             return "{\"error\": \"Failed to communicate with LLM service: " + e.getMessage() + "\"}";
         }
     }
+
+    //iteraton count is used to cap how many times code can be regenerated
     public void incrementIterationCount(){
         this.iterationCount++;
     }
