@@ -62,46 +62,7 @@ public class dockerHandler {
 
 
     }
-    public void saveUserFile(String pythonCode, String filePath) {
 
-
-
-        String containerName = "pythonide_testing-app-1";
-
-
-        try {
-            String[] command = {
-                    "docker", "exec", "-i", containerName, "sh", "-c", "cat > " + filePath
-            };
-
-            Process process = Runtime.getRuntime().exec(command);
-
-            try (OutputStream outputStream = process.getOutputStream()) {
-                outputStream.write(pythonCode.getBytes());
-                outputStream.flush();
-            }
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-
-                String line;
-                while ((line = reader.readLine()) != null) {
-//                        System.out.println("Output: " + line);
-                }
-                while ((line = errorReader.readLine()) != null) {
-//                        System.err.println("Error: " + line);
-                }
-            }
-
-            int exitCode = process.waitFor();
-            if (exitCode == 0) {
-                System.out.println("Python code successfully saved to the container!");
-            } else {
-                System.err.println("Failed to save the Python code. Exit code: " + exitCode);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
 
 
 
@@ -164,30 +125,7 @@ public class dockerHandler {
         }
 
 
-    //method that runs the file and returns the result
-    public String runFileAndReturnResult(String filePath) {
-        StringBuilder result = new StringBuilder();
-        try {
-            System.out.println("Running file: " + filePath);
-            ProcessBuilder runFileProcess = new ProcessBuilder(
-                    "docker", "exec", "-i", "pythonide_testing-app-1",
-                    "python3", filePath
-            );
-            Process runFile = runFileProcess.start();
-            runFile.waitFor();
-            System.out.println("File execution completed");
 
-            BufferedReader reader = new BufferedReader(new InputStreamReader(runFile.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                result.append(line).append("\n");
-            }
-
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-        return result.toString();
-    }
 
     public Vulnerability parseVulnerability(String vulnString){
 //        System.out.println(vulnString);
@@ -238,87 +176,8 @@ public class dockerHandler {
 
         return text;
     }
-//    public static void runFile(String filename, Session session) {
-////        Process process = null;
-////        BufferedReader reader = null;
-////        BufferedReader errorReader = null;
-////        BufferedWriter writer = null;
-////
-////        try {
-////            ProcessBuilder processBuilder = new ProcessBuilder(
-////                    "docker", "exec", "-i", "pythonide_testing-app-1",
-////                    "python3", filename
-////            );
-////            process = processBuilder.start();
-////
-////            writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
-////            reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-////            errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-////
-////            final BufferedWriter finalWriter = writer; // Declare as final
-////            String line;
-////            while ((line = reader.readLine()) != null) {
-////                session.getBasicRemote().sendText(line);
-////            }
-////
-////            // Capture and send any errors (if any)
-////            String errorLine;
-////            while ((errorLine = errorReader.readLine()) != null) {
-////                session.getBasicRemote().sendText("Error: " + errorLine);
-////            }
-////
-////            // Handle user input
-////            session.addMessageHandler(String.class, message -> {
-////                try {
-////                    finalWriter.write(message);
-////                    finalWriter.newLine();
-////                    finalWriter.flush();
-////                } catch (IOException e) {
-////                    e.printStackTrace();
-////                }
-////            });
-////
-////            int exitCode = process.waitFor();
-////            System.out.println("File execution completed with exit code: " + exitCode);
-////
-////        } catch (IOException | InterruptedException e) {
-////            e.printStackTrace();
-////        } finally {
-////            try {
-////                if (reader != null) {
-////                    reader.close();
-////                }
-////                if (errorReader != null) {
-////                    errorReader.close();
-////                }
-////                if (writer != null) {
-////                    writer.close();
-////                }
-////            } catch (IOException e) {
-////                e.printStackTrace();
-////            }
-////        }
-//        ExecutorService executor = Executors.newSingleThreadExecutor();
-//        executor.submit(() -> {
-//            try {
-//                ProcessBuilder builder = new ProcessBuilder("python3", filePath);
-//                Process process = builder.start();
-//                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-//                String line;
-//
-//                while ((line = reader.readLine()) != null) {
-//                    if (webSocketSession.isOpen()) {
-//                        webSocketSession.getBasicRemote().sendText(line);
-//                    }
-//                }
-//
-//                process.waitFor();
-//                reader.close();
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        });
-//    }
+
+
 public void runFile(String filePath, Session webSocketSession) {
     ExecutorService executor = Executors.newSingleThreadExecutor();
     executor.submit(() -> {
@@ -334,6 +193,7 @@ public void runFile(String filePath, Session webSocketSession) {
 
             // Reading the output of the Python script and sending it over the WebSocket.
             // Untested
+            // might just need to stick this on a daemon thread?
             while ((line = reader.readLine()) != null) {
                 if (webSocketSession != null && webSocketSession.isOpen()) {
                     webSocketSession.getBasicRemote().sendText(line);
@@ -347,6 +207,51 @@ public void runFile(String filePath, Session webSocketSession) {
         }
     });
 }
+
+
+
+//for the userIDE endpoint
+public void saveUserFile(String pythonCode, String filePath) {
+
+
+
+    String containerName = "pythonide_testing-app-1";
+
+
+    try {
+        String[] command = {
+                "docker", "exec", "-i", containerName, "sh", "-c", "cat > " + filePath
+        };
+
+        Process process = Runtime.getRuntime().exec(command);
+
+        try (OutputStream outputStream = process.getOutputStream()) {
+            outputStream.write(pythonCode.getBytes());
+            outputStream.flush();
+        }
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+             BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+//                        System.out.println("Output: " + line);
+            }
+            while ((line = errorReader.readLine()) != null) {
+//                        System.err.println("Error: " + line);
+            }
+        }
+
+        int exitCode = process.waitFor();
+        if (exitCode == 0) {
+            System.out.println("Python code successfully saved to the container!");
+        } else {
+            System.err.println("Failed to save the Python code. Exit code: " + exitCode);
+        }
+    } catch (Exception e) {
+        e.printStackTrace();
+    }
+
 
 
 
