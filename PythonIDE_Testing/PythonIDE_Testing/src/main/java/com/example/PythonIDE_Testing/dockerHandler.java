@@ -8,65 +8,63 @@ import java.io.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.ArrayList;
-import javax.websocket.Session;
+//import javax.websocket.Session;
+import org.springframework.web.socket.WebSocketSession;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import org.springframework.web.socket.TextMessage;
 
 
 public class dockerHandler {
 
-    public dockerHandler() {}
+    public dockerHandler() {
+    }
 
     public void saveFile(String pythonCode, String filePath) {
 
 //            String strippedPythonCode = pythonCode;
-            String strippedPythonCode = stripHtmlTags(pythonCode);
+        String strippedPythonCode = stripHtmlTags(pythonCode);
 
-            String containerName = "pythonide_testing-app-1";
+        String containerName = "pythonide_testing-app-1";
 
 
-            try {
-                String[] command = {
-                        "docker", "exec", "-i", containerName, "sh", "-c", "cat > " + filePath
-                };
+        try {
+            String[] command = {
+                    "docker", "exec", "-i", containerName, "sh", "-c", "cat > " + filePath
+            };
 
-                Process process = Runtime.getRuntime().exec(command);
+            Process process = Runtime.getRuntime().exec(command);
 
-                try (OutputStream outputStream = process.getOutputStream()) {
-                    outputStream.write(strippedPythonCode.getBytes());
-                    outputStream.flush();
-                }
-
-                try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                     BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-//                        System.out.println("Output: " + line);
-                    }
-                    while ((line = errorReader.readLine()) != null) {
-//                        System.err.println("Error: " + line);
-                    }
-                }
-
-                int exitCode = process.waitFor();
-                if (exitCode == 0) {
-                    System.out.println("Python code successfully saved to the container!");
-                } else {
-                    System.err.println("Failed to save the Python code. Exit code: " + exitCode);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+            try (OutputStream outputStream = process.getOutputStream()) {
+                outputStream.write(strippedPythonCode.getBytes());
+                outputStream.flush();
             }
 
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+//                        System.out.println("Output: " + line);
+                }
+                while ((line = errorReader.readLine()) != null) {
+//                        System.err.println("Error: " + line);
+                }
+            }
+
+            int exitCode = process.waitFor();
+            if (exitCode == 0) {
+                System.out.println("Python code successfully saved to the container!");
+            } else {
+                System.err.println("Failed to save the Python code. Exit code: " + exitCode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
 
     }
 
-
-
-
-    }
 
     //method that calls bandit on the file
     public ArrayList<Vulnerability> runBanditOnFile(String filepath) {
@@ -83,7 +81,6 @@ public class dockerHandler {
             bandit.waitFor();
 
 
-
             System.out.println("Bandit analysis completed successfully.");
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(bandit.getInputStream()));
@@ -93,10 +90,10 @@ public class dockerHandler {
             while ((line = reader.readLine()) != null) {
 
 
-                if(line.contains("Issue: [")){
+                if (line.contains("Issue: [")) {
 
                     vulnerability += line;
-                    for(int j = 0; j < 7; j++){
+                    for (int j = 0; j < 7; j++) {
                         i++;
                         line = reader.readLine();
                         vulnerability += line;
@@ -110,9 +107,9 @@ public class dockerHandler {
 
                 i++;
             }
-            if(vulnerabilities.toString().equals("[]")){
+            if (vulnerabilities.toString().equals("[]")) {
                 System.out.println("No vulnerabilities found");
-            }else{
+            } else {
                 System.out.println(vulnerabilities.toString());
 
             }
@@ -120,14 +117,12 @@ public class dockerHandler {
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
-            return vulnerabilities;
+        return vulnerabilities;
 
-        }
-
-
+    }
 
 
-    public Vulnerability parseVulnerability(String vulnString){
+    public Vulnerability parseVulnerability(String vulnString) {
 //        System.out.println(vulnString);
 
 //        Issue: [B608:hardcoded_sql_expressions] Possible SQL injection vector through string-based query construction.   Severity: Medium   Confidence: Low
@@ -178,81 +173,80 @@ public class dockerHandler {
     }
 
 
-public void runFile(String filePath, Session webSocketSession) {
-    ExecutorService executor = Executors.newSingleThreadExecutor();
-    executor.submit(() -> {
-        try {
-            // Run the Python file inside the container
-            ProcessBuilder builder = new ProcessBuilder(
-                    "docker", "exec", "-i", "pythonide_testing-app-1", "python3", filePath
-            );
+    public void runFile(String filePath, WebSocketSession webSocketSession) {
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(() -> {
+            try {
+                // Run the Python file inside the container
+                ProcessBuilder builder = new ProcessBuilder(
+                        "docker", "exec", "-i", "pythonide_testing-app-1", "python3", filePath
+                );
 
-            Process process = builder.start();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
+                Process process = builder.start();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                String line;
 
-            // Reading the output of the Python script and sending it over the WebSocket.
-            // Untested
-            // might just need to stick this on a daemon thread?
-            while ((line = reader.readLine()) != null) {
-                if (webSocketSession != null && webSocketSession.isOpen()) {
-                    webSocketSession.getBasicRemote().sendText(line);
+                // Reading the output of the Python script and sending it over the WebSocket.
+                // Untested
+                // might just need to stick this on a daemon thread?
+                while ((line = reader.readLine()) != null) {
+                    if (webSocketSession != null && webSocketSession.isOpen()) {
+                        webSocketSession.sendMessage(new TextMessage(line));
+                    }
                 }
+
+                process.waitFor();
+                reader.close();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-            process.waitFor();
-            reader.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    });
-}
-
-
-
-//for the userIDE endpoint
-public void saveUserFile(String pythonCode, String filePath) {
-
-
-
-    String containerName = "pythonide_testing-app-1";
-
-
-    try {
-        String[] command = {
-                "docker", "exec", "-i", containerName, "sh", "-c", "cat > " + filePath
-        };
-
-        Process process = Runtime.getRuntime().exec(command);
-
-        try (OutputStream outputStream = process.getOutputStream()) {
-            outputStream.write(pythonCode.getBytes());
-            outputStream.flush();
-        }
-
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-             BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-//                        System.out.println("Output: " + line);
-            }
-            while ((line = errorReader.readLine()) != null) {
-//                        System.err.println("Error: " + line);
-            }
-        }
-
-        int exitCode = process.waitFor();
-        if (exitCode == 0) {
-            System.out.println("Python code successfully saved to the container!");
-        } else {
-            System.err.println("Failed to save the Python code. Exit code: " + exitCode);
-        }
-    } catch (Exception e) {
-        e.printStackTrace();
+        });
     }
 
 
+    //for the userIDE endpoint
+    public void saveUserFile(String pythonCode, String filePath) {
 
 
+        String containerName = "pythonide_testing-app-1";
+
+
+        try {
+            String[] command = {
+                    "docker", "exec", "-i", containerName, "sh", "-c", "cat > " + filePath
+            };
+
+            Process process = Runtime.getRuntime().exec(command);
+
+            try (OutputStream outputStream = process.getOutputStream()) {
+                outputStream.write(pythonCode.getBytes());
+                outputStream.flush();
+            }
+
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    //send to websocket
+                    sendToSession(sessionId, line);
+//                        System.out.println("Output: " + line);
+                }
+                while ((line = errorReader.readLine()) != null) {
+//                        System.err.println("Error: " + line);
+                }
+            }
+
+            int exitCode = process.waitFor();
+            if (exitCode == 0) {
+                System.out.println("Python code successfully saved to the container!");
+            } else {
+                System.err.println("Failed to save the Python code. Exit code: " + exitCode);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+
+    }
 }

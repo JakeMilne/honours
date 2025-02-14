@@ -2,44 +2,69 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Python IDE</title>
+    <title>IDE</title>
+    <style>
+        #conversation {
+            width: 80%;
+            height: 300px;
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-y: auto;
+        }
+        #usercode {
+            width: 80%;
+            height: 100px;
+        }
+        #runButton {
+            padding: 10px;
+        }
+    </style>
+    <script>
+        const socket = new WebSocket('ws://localhost:8083/ws');
+
+        socket.onopen = function() {
+            console.log('WebSocket connection established');
+        };
+
+        socket.onmessage = function(event) {
+            const result = event.data;
+
+            const conversation = document.getElementById('conversation');
+            conversation.value += 'Server: ' + result + '\n';
+
+            conversation.scrollTop = conversation.scrollHeight;
+        };
+
+        function runCode() {
+            const userCode = document.getElementById('usercode').value;
+
+
+            const conversation = document.getElementById('conversation');
+            conversation.value += 'User: ' + userCode + '\n';
+
+            conversation.scrollTop = conversation.scrollHeight;
+
+            socket.send(JSON.stringify({
+                type: 'runCode',
+                code: userCode
+            }));
+
+            document.getElementById('usercode').value = '';
+        }
+
+
+    </script>
 </head>
 <body>
-<h1>Python IDE</h1>
-<textarea id="code" rows="10" cols="50"></textarea>
-<button onclick="submitCode()">Run</button>
+<h1>Code Editor</h1>
 
-<h2>Output:</h2>
-<pre id="output"></pre>
+<textarea id="conversation" readonly></textarea><br>
 
-<script>
-    const socket = new WebSocket('ws://localhost:8083/socket');  // Ensure it matches Spring Boot
+<textarea id="usercode" rows="5" cols="80"></textarea><br>
 
-    socket.onopen = function(event) {
-        console.log('WebSocket is open now.');
-    };
-
-    socket.onmessage = function(event) {
-        console.log('WebSocket message received:', event.data);
-        let message = JSON.parse(event.data);
-        if (message.type === "session_id") {
-            sessionId = message.data;
-            console.log("Session ID received:", sessionId);
-        } else if (message.type === "result") {
-            document.getElementById("output").innerText = message.data;
-        }
-    };
-
-    socket.onerror = function(event) {
-        console.error('WebSocket error observed:', event);
-    };
-
-    socket.onclose = function(event) {
-        console.log('WebSocket is closed now. Code:', event.code, 'Reason:', event.reason);
-    };
-
-
-</script>
+<button id="runButton" onclick="runCode()">Run Code</button>
 </body>
 </html>

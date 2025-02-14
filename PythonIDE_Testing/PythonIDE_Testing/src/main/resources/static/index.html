@@ -7,24 +7,47 @@
 <body>
 
 <h1>Welcome to the Form</h1>
-
 <form action="/MyServlet" method="POST">
     <label for="userprompt">Prompt:</label><br>
     <input type="text" id="userprompt" name="userprompt" value="Prompt"><br>
 
     <label for="parameters">parameters:</label><br>
     <input type="text" id="parameters" name="parameters" value="parameters"><br><br>
+
     <label for="output">output:</label><br>
     <input type="text" id="output" name="output" value="output"><br>
 
+<!--    <input type="hidden" name="session_id" value="">-->
+
     <input type="submit" value="Submit">
 </form>
+
+<!--<script>-->
+<!--    document.getElementById('myForm').addEventListener('submit', function(event) {-->
+<!--        event.preventDefault();-->
+
+<!--        const formData = new FormData(event.target);-->
+<!--        fetch('/servlet', {-->
+<!--            method: 'POST',-->
+<!--            body: formData-->
+<!--        })-->
+<!--            .then(response => response.text())-->
+<!--            .then(responseText => {-->
+<!--                console.log(responseText);  // Handle the server response here-->
+<!--            })-->
+<!--            .catch(error => {-->
+<!--                console.error('Error submitting form:', error);-->
+<!--            });-->
+<!--    });-->
+<!--</script>-->
+
+
+</body>
+</html>
+
 <!--<h2>or enter your own code to be tested:</h2>-->
 <!--<form action="/userIDE" method="POST">-->
 <!--    <label for="usercode">code:</label><br>-->
 <!--    <textarea id="usercode" name="usercode" rows="20" cols="80"></textarea><br>-->
 <!--    <input type="submit" value="Check">-->
 <!--</form>-->
-
-</body>
-</html>

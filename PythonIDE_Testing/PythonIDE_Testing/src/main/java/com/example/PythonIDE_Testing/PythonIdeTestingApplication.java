@@ -14,24 +14,22 @@ import java.util.Map;
 public class PythonIdeTestingApplication {
 
 	public static void main(String[] args) {
-		startWebSocketServer();
-
 		SpringApplication.run(PythonIdeTestingApplication.class, args);
 	}
 
-	private static void startWebSocketServer() {
-		Map<String, Object> serverConfig = new HashMap<>();
-
-		Server server = new Server("localhost", 8082, "/socket", serverConfig, WebSocket.class);
-
-		try {
-			server.start();
-			System.out.println("WebSocket server started at ws://localhost:8082/socket");
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+//	private static void startWebSocketServer() {
+//		Map<String, Object> serverConfig = new HashMap<>();
+//
+//		Server server = new Server("localhost", 8082, "/socket", serverConfig, WebSocket.class);
+//
+//		try {
+//			server.start();
+//			System.out.println("WebSocket server started at ws://localhost:8082/socket");
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
 }
 
 

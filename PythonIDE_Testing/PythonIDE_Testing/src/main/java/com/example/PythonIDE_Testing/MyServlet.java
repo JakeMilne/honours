@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
+import org.springframework.web.socket.WebSocketSession;
+
 
 
 @WebServlet("/MyServlet")
@@ -19,7 +21,7 @@ public class MyServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        //storing user input
+        // storing user input
         String userprompt = request.getParameter("userprompt");
         String parameter = request.getParameter("parameters");
         String exampleOutputs = request.getParameter("exampleOutputs");
@@ -27,62 +29,75 @@ public class MyServlet extends HttpServlet {
         response.setContentType("text/html");
         PrintWriter writer = response.getWriter();
         writer.println("<html>");
-        //showing the users input, was/is used for testing
+        // showing the users input, was/is used for testing
         writer.println("<h1>Prompt: " + userprompt + "</h1>");
         writer.println("<h1>parameters: " + parameter + "</h1>");
         writer.println("<h1>example output(s): " + exampleOutputs + "</h1>");
 
-        //code generator object handles LLM calls
+        // code generator object handles LLM calls
         codeGenerator generator = new codeGenerator(userprompt, parameter, exampleOutputs);
         String callresponse = generator.callLM(userprompt);
 
-        //response handler object parses LLM responses
+        // response handler object parses LLM responses
         ResponseHandler responseHandler = new ResponseHandler();
         String content = responseHandler.extractCode(callresponse);
         content = "<pre>" + content.replace("\n", "<br>") + "</pre>";
 
-        //setting session variables
+        // setting session variables
         request.getSession().setAttribute("codeGenerator", generator);
         request.getSession().setAttribute("responseHandler", responseHandler);
 
+        // might need to clear iterations here. at the moment if the user goes back to the main page and tries another prompt it keeps adding to the same arraylist
+        iterations.clear();
 
-        // might need to clear iterations here.
-
-
-
-
-
-        //runTests method deals with the dockerHandler object and its methods
+        // runTests method deals with the dockerHandler object and its methods
         runTests(generator, responseHandler, content, response, writer, request);
 
-        //some stuff to display the different iterations of the code
+        // some stuff to display the different iterations of the code
         int index = iterations.size() - 1;
         System.out.println("Iterations size: " + iterations.size());
 
-//        writer.println("<h1>HELLO</h1>");
-
         writer.println("<h2>Iteration " + (index + 1) + "</h2>");
-//        writer.println(iterations.get(index).getCode());
-//        System.out.println("Iteration code: " + iterations.get(index).getCode());
+        // writer.println(iterations.get(index).getCode());
+        // System.out.println("Iteration code: " + iterations.get(index).getCode());
 
-
-        //getting rid of pesky html tags
+        // getting rid of pesky html tags
         String code = iterations.get(index).getCode().replace("<br>", "\n").replace("<pre>", "").replace("</pre>", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 
-
-
         System.out.println("reformatted code: " + code);
-        String sessionId = request.getSession().getId(); // Get the session ID
+//        String sessionId = request.getParameter("session_id");
+//        if (sessionId == null) {
+//            writer.println("<h1>Error: Session ID is missing.</h1>");
+//            return;
+//        } else {
+//            writer.println("<h1>Session ID: " + sessionId + "</h1>");
+//        }
+//
+//        WebSocketSession webSocketSession = MyWebSocketHandler.getSessionById(sessionId);
+//        if (webSocketSession == null) {
+//            writer.println("<h1>Error: WebSocket session not found.</h1>");
+//            return;
+//        }
+
         writer.println("<form action=\"/userIDE\" method=\"POST\">");
-        writer.println("<input type=\"hidden\" name=\"session_id\" value=\"" + sessionId + "\">");
+//        writer.println("<input type=\"hidden\" name=\"session_id\" value=\"" + sessionId + "\">");
         writer.println("<label for=\"usercode\">code:</label><br>");
         writer.println("<textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\">" + code + "</textarea><br>");
         writer.println("<input type=\"submit\" value=\"Check\">");
         writer.println("</form>");
 
-//        Session webSocketSession = WebSocket.getSessionById(webSocketSessionId);
+//        writer.println("<form action=\"/MyServlet\" method=\"POST\" onsubmit=\"redirectToIDE()\">");
+//        writer.println("<textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\">" + code + "</textarea><br>");
+//        writer.println("<button type="submit">Submit</button>");
+//        writer.println("</form>");
+//        writer.println("<script>\n" +
+//                "        function redirectToIDE() {\n" +
+//                "            // Redirect to /userIDE after form submission\n" +
+//                "            window.location.href = \"/userIDE\";\n" +
+//                "        }\n" +
+//                "    </script>");
 
-        // I think i need to pass the session id here when the users goes to a different iteration
+
         if (index > 0) {
             writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous iteration</a> ");
         }
@@ -90,10 +105,8 @@ public class MyServlet extends HttpServlet {
             writer.println("<a href='/MyServlet?index=" + (index + 1) + "'>Next iteration</a>");
         }
 
-
         writer.close();
     }
-
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {

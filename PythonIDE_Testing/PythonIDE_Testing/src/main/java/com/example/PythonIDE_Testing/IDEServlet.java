@@ -8,7 +8,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import javax.websocket.Session;
+//import javax.websocket.Session;
+import org.springframework.web.socket.WebSocketSession;
 
 @WebServlet("/userIDE")
 public class IDEServlet extends HttpServlet {
@@ -17,48 +18,19 @@ public class IDEServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // Forward to the ide.html page where the WebSocket will be established
         request.getRequestDispatcher("/ide.html").forward(request, response);
     }
 
-
-
-
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        response.setContentType("text/html");
-
+        // Handle code submission if necessary (or just pass to WebSocket handling)
         String userCode = request.getParameter("usercode");
+        // Optional: Store user code in session or database if needed.
+        // If you're using WebSocket handling, you may not need this directly.
 
-        String webSocketSessionId = request.getParameter("session_id");
-        System.out.println(webSocketSessionId);
-        System.out.println(webSocketSessionId);
-        System.out.println(webSocketSessionId);
-        System.out.println(webSocketSessionId);
-        System.out.println(webSocketSessionId);
-
-
-
-        if (webSocketSessionId == null) {
-            response.getWriter().println("<h1>Error: WebSocket session ID is missing.</h1>");
-            return;
-        }
-
-        dockerHandler docker = (dockerHandler) request.getSession().getAttribute("dockerHandler");
-
-        String filePath = "/tmp/userscript.py";
-        docker.saveUserFile(userCode, filePath);
-
-
-        //This used to return null so keep an eye on it if stuff breaks again
-        Session webSocketSession = WebSocket.getSessionById(webSocketSessionId);
-        System.out.println("WebSocket session: " + webSocketSession);
-
-        if (webSocketSession != null) {
-            docker.runFile(filePath, webSocketSession);
-        }
-
-        //need to pass the users code somehow.
-        response.sendRedirect("/ide.html");
+        // Redirect to /userIDE after form submission
+        response.sendRedirect("/userIDE");
     }
 
 }

@@ -8,3 +8,6 @@ I think I need to pass websocket instance in the dopost for userIDE - maybe forg
 sessionIDs are somewhat broken. using the next/previous iterations makes the id null. might just need to outright pass it when those buttons are pressed or something.
 
 also, found if the user goes back to the main page and tries to generate more code, it just stacks on top of the old code in the iterations arraylist. will need to reset it. maybe on submit?
+
+
+think about evaluation
