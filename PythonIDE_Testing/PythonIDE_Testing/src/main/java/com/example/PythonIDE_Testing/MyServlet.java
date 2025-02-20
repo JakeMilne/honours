@@ -79,12 +79,7 @@ public class MyServlet extends HttpServlet {
 //            return;
 //        }
 
-        writer.println("<form action=\"/userIDE\" method=\"POST\">");
-//        writer.println("<input type=\"hidden\" name=\"session_id\" value=\"" + sessionId + "\">");
-        writer.println("<label for=\"usercode\">code:</label><br>");
-        writer.println("<textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\">" + code + "</textarea><br>");
-        writer.println("<input type=\"submit\" value=\"Check\">");
-        writer.println("</form>");
+        generateForm(code, writer);
 
 //        writer.println("<form action=\"/MyServlet\" method=\"POST\" onsubmit=\"redirectToIDE()\">");
 //        writer.println("<textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\">" + code + "</textarea><br>");
@@ -128,7 +123,7 @@ public class MyServlet extends HttpServlet {
             writer.println("<h1>Vulnerabilities Detected:</h1>");
             writer.println("<ul>");
             for (Vulnerability vuln : iterations.get(index).getVulnerabilities()) {
-                writer.println("<li>" + vuln.getDescription() + "</li>");
+                writer.println("<li>" + vuln.toString() + "</li>");
             }
             writer.println("</ul>");
         } else {
@@ -140,11 +135,7 @@ public class MyServlet extends HttpServlet {
         String code = iterations.get(index).getCode().replace("<br>", "\n").replace("<pre>", "").replace("</pre>", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 
 
-        writer.println("<form action=\"/userIDE\" method=\"POST\">");
-        writer.println("<label for=\"usercode\">code:</label><br>");
-        writer.println("<textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\">" + code + "</textarea><br>");
-        writer.println("<input type=\"submit\" value=\"Check\">");
-        writer.println("</form>");
+        generateForm(code, writer);
 //        writer.println(iterations.get(index).getCode());
 
         if (index > 0) {
@@ -171,7 +162,7 @@ public class MyServlet extends HttpServlet {
 
 
             String filePath = "/tmp/script.py";
-            docker.saveFile(content, filePath);
+            docker.saveFile(content, filePath, true);
             ArrayList<Vulnerability> vulnerabilities = docker.runBanditOnFile(filePath);
             iterations.add(new Iteration(content, vulnerabilities));
             String newContent = "";
@@ -181,7 +172,7 @@ public class MyServlet extends HttpServlet {
                 newContent = generator.regenerateForVulnerability(content, vulnerabilities);
                 String newCode = responseHandler.extractCode(newContent);
                 filePath = "/tmp/script" + generator.getIterationCount() + ".py";
-                docker.saveFile(newCode, filePath);
+                docker.saveFile(newCode, filePath, true);
                 vulnerabilities = docker.runBanditOnFile(filePath);
                 newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
                 iterations.add(new Iteration(newCode, vulnerabilities));
@@ -190,6 +181,48 @@ public class MyServlet extends HttpServlet {
             if(generator.getIterationCount() > generator.iterationCap) {
                 writer.println("<h1>Iteration cap reached</h1>");
             }
+
+
+    }
+    public void generateForm(String code, PrintWriter writer) {
+        writer.println("<style>");
+        writer.println("  .editor-container { display: flex; font-family: monospace; }");
+        writer.println("  .line-numbers { ");
+        writer.println("    text-align: right; ");
+        writer.println("    padding-right: 10px; ");
+        writer.println("    user-select: none; ");
+        writer.println("    font-size: 14px;");
+        writer.println("    line-height: 1.2em;");
+        writer.println("    margin: 0;");
+        writer.println("    padding-top: 6px;");
+        writer.println("  }");
+        writer.println("  .editor { ");
+        writer.println("    font-size: 14px;");
+        writer.println("    line-height: 1.2em;");
+        writer.println("    padding: 6px;");
+        writer.println("    margin: 0;");
+        writer.println("    border: 1px solid #ccc;");
+        writer.println("    resize: none;");
+        writer.println("  }");
+        writer.println("</style>");
+
+        writer.println("<form action=\"/userIDE\" method=\"POST\">");
+        writer.println("<div class=\"editor-container\">");
+        writer.println("  <pre class=\"line-numbers\" id=\"lineNumbers\"></pre>");
+        writer.println("  <textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\" class=\"editor\" oninput=\"updateLines()\">" + code + "</textarea>");
+        writer.println("</div>");
+        writer.println("<input type=\"submit\" value=\"Check\">");
+        writer.println("</form>");
+
+        writer.println("<script>");
+        writer.println("  function updateLines() {");
+        writer.println("    let textarea = document.getElementById(\"usercode\");");
+        writer.println("    let lines = textarea.value.split(\"\\n\").length;");
+        writer.println("    let lineNumberArea = document.getElementById(\"lineNumbers\");");
+        writer.println("    lineNumberArea.innerHTML = Array.from({length: lines}, (_, i) => (i + 1)).join(\"\\n\");");
+        writer.println("  }");
+        writer.println("  updateLines();");
+        writer.println("</script>");
 
 
     }

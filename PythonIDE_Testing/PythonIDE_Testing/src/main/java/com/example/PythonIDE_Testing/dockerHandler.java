@@ -13,19 +13,42 @@ import org.springframework.web.socket.WebSocketSession;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.springframework.web.socket.TextMessage;
-
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.TimeUnit;
+import java.util.Queue;
+import java.util.LinkedList;
 
 public class dockerHandler {
+
+    private ConcurrentLinkedQueue<String> inputQueue = new ConcurrentLinkedQueue<>();
+    private boolean waitingForInput = false;
+    private String containerName = "pythonide_testing-app-1";
+    private final Object webSocketLock = new Object();
+
+
+
 
     public dockerHandler() {
     }
 
-    public void saveFile(String pythonCode, String filePath) {
-
+    public void saveFile(String pythonCode, String filePath, boolean strip) {
+        System.out.println("Saving Python code to the container at: " + filePath);
 //            String strippedPythonCode = pythonCode;
-        String strippedPythonCode = stripHtmlTags(pythonCode);
+        System.out.println(pythonCode);
+        System.out.println("=============== Stripped Python code===============");
+        String strippedPythonCode = "";
+        if(strip){
 
-        String containerName = "pythonide_testing-app-1";
+            strippedPythonCode = stripHtmlTags(pythonCode);
+            System.out.println(strippedPythonCode);
+        }else{
+            strippedPythonCode = pythonCode;
+            System.out.println(strippedPythonCode);
+        }
+        System.out.println("============= Stripped Python code end =============");
+
+//        String containerName = "pythonide_testing-app-1";
 
 
         try {
@@ -37,6 +60,7 @@ public class dockerHandler {
 
             try (OutputStream outputStream = process.getOutputStream()) {
                 outputStream.write(strippedPythonCode.getBytes());
+
                 outputStream.flush();
             }
 
@@ -72,7 +96,7 @@ public class dockerHandler {
 
         try {
             ProcessBuilder banditProcess = new ProcessBuilder(
-                    "docker", "exec", "-i", "pythonide_testing-app-1",
+                    "docker", "exec", "-i", containerName,
 //                    "bandit", "-r", "/tmp/script.py", "-v", "-f", "json"
                     "bandit", "-r", filepath, "-v"
 
@@ -172,81 +196,212 @@ public class dockerHandler {
         return text;
     }
 
+    public Queue<String> parseInputs(String code){
+        Queue<String> inputs = new LinkedList<>();
+        String regex = "input\\(\\s*\"(.*?)\"\\s*\\)";
+        Pattern pattern = Pattern.compile(regex);
+        Matcher matcher = pattern.matcher(code);
 
-    public void runFile(String filePath, WebSocketSession webSocketSession) {
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(() -> {
+        while (matcher.find()) {
+            inputs.add(matcher.group(1));
+            System.out.println("Input: " + matcher.group(1));
+        }
+        return inputs;
+    }
+
+
+    public void runFile(String filePath, WebSocketSession session, String code) {
+        new Thread(() -> {
             try {
-                // Run the Python file inside the container
-                ProcessBuilder builder = new ProcessBuilder(
-                        "docker", "exec", "-i", "pythonide_testing-app-1", "python3", filePath
-                );
+                System.out.println("Running Python script: " + filePath);
+                ProcessBuilder scriptBuilder = new ProcessBuilder("docker", "exec", "-i", containerName, "python3", "-u", filePath);
+                Process process = scriptBuilder.start();
 
-                Process process = builder.start();
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                String line;
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
+                BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 
-                // Reading the output of the Python script and sending it over the WebSocket.
-                // Untested
-                // might just need to stick this on a daemon thread?
-                while ((line = reader.readLine()) != null) {
-                    if (webSocketSession != null && webSocketSession.isOpen()) {
-                        webSocketSession.sendMessage(new TextMessage(line));
+                AtomicBoolean waitingForInput = new AtomicBoolean(false);
+                Queue<String> inputs = parseInputs(code);
+
+
+                Thread outputThread = new Thread(() -> {
+                    try {
+                        int c;
+                        String nextInput = inputs.peek();
+                        boolean nextInputUsed = false;
+
+
+                        System.out.println("Reading output");
+                        StringBuilder lineBuffer = new StringBuilder();
+                        while ((c = reader.read()) != -1) {
+                            //using chars causes an issue with inputs. right now when the user responds to an input request, the server responds with the text from the input
+                            //function + the first char of the users response, then it keeps sending responses building onto this with the next char of the users response and so on
+                            char ch = (char) c;
+                            lineBuffer.append(ch);
+//                            System.out.println(lineBuffer.toString());
+
+
+//                            sendMessageToUser(session, lineBuffer.toString());
+
+
+                                if (nextInput != null && lineBuffer.toString().contains(nextInput)) {
+                                    sendMessageToUser(session, "Detected input request");
+                                    sendMessageToUser(session, "line 245" + lineBuffer.toString());
+                                    inputs.poll();
+                                    nextInputUsed = true;
+
+                                    waitingForInput.set(true);
+                                }
+
+
+                            if (ch == '\n') {
+                                System.out.println("NEW LINE");
+                                System.out.println("NEW LINE");
+                                System.out.println("NEW LINE");
+                                System.out.println("NEW LINE");
+                                System.out.println("NEW LINE");
+                                System.out.println("NEW LINE");
+                                System.out.println("NEW LINE");
+                                System.out.println("NEW LINE");
+
+
+                                String line = lineBuffer.toString().trim();
+                                if(nextInput != null && line.contains(nextInput)){
+                                    line = line.replace(nextInput, "");
+                                    nextInputUsed = false;
+                                    nextInput = inputs.peek();
+                                }
+                                sendMessageToUser(session, "line 262 " + line);
+                                System.out.println(line);
+
+
+                                lineBuffer.setLength(0);
+                            }
+                        }
+
+                        if (lineBuffer.length() > 0) {
+                            sendMessageToUser(session, "line 271 " + lineBuffer.toString());
+                        }
+
+                    } catch (IOException e) {
+                        sendMessageToUser(session, "Output error: " + e.getMessage());
+                    }
+                });
+
+                Thread errorThread = new Thread(() -> {
+                    try {
+                        String line;
+                        while ((line = errorReader.readLine()) != null) {
+                            sendMessageToUser(session, "Error: " + line);
+                        }
+                    } catch (IOException e) {
+                        sendMessageToUser(session, "Error reading: " + e.getMessage());
+                    }
+                });
+
+                outputThread.start();
+                errorThread.start();
+
+                while (process.isAlive()) {
+                    if (waitingForInput.get() && !inputQueue.isEmpty()) {
+                        try {
+                            String input = inputQueue.poll();
+                            if (input != null) {
+                                sendMessageToUser(session, "Sending input: " + input);
+                                writer.write(input + "\n");
+                                writer.flush();
+                                waitingForInput.set(false);
+                            }
+                        } catch (IOException e) {
+                            sendMessageToUser(session, "Input error: " + e.getMessage());
+                        }
+                    }
+
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
                     }
                 }
 
-                process.waitFor();
-                reader.close();
+                int exitCode = process.waitFor();
+                sendMessageToUser(session, "Process completed with code: " + exitCode);
+
             } catch (Exception e) {
+                sendMessageToUser(session, "Process error: " + e.getMessage());
+            }
+        }).start();
+    }
+
+
+
+
+    public void addUserInput(String input) {
+        System.out.println("adding to input queue");
+        inputQueue.offer(input);
+    }
+
+
+    private void sendMessageToUser(WebSocketSession session, String message) {
+        if (session == null || !session.isOpen()) {
+            return;
+        }
+        System.out.println("sending message to user");
+        synchronized (webSocketLock) {
+            try {
+                TextMessage textMessage = new TextMessage(message);
+                session.sendMessage(textMessage);
+            } catch (IOException e) {
                 e.printStackTrace();
             }
-        });
+        }
     }
-
 
     //for the userIDE endpoint
-    public void saveUserFile(String pythonCode, String filePath) {
-
-
-        String containerName = "pythonide_testing-app-1";
-
-
-        try {
-            String[] command = {
-                    "docker", "exec", "-i", containerName, "sh", "-c", "cat > " + filePath
-            };
-
-            Process process = Runtime.getRuntime().exec(command);
-
-            try (OutputStream outputStream = process.getOutputStream()) {
-                outputStream.write(pythonCode.getBytes());
-                outputStream.flush();
-            }
-
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
-
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    //send to websocket
-                    sendToSession(sessionId, line);
-//                        System.out.println("Output: " + line);
-                }
-                while ((line = errorReader.readLine()) != null) {
-//                        System.err.println("Error: " + line);
-                }
-            }
-
-            int exitCode = process.waitFor();
-            if (exitCode == 0) {
-                System.out.println("Python code successfully saved to the container!");
-            } else {
-                System.err.println("Failed to save the Python code. Exit code: " + exitCode);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-
-    }
+//    public void saveUserFile(String pythonCode, String filePath) {
+//
+//
+//        String containerName = "pythonide_testing-app-1";
+//
+//
+//        try {
+//            String[] command = {
+//                    "docker", "exec", "-i", containerName, "sh", "-c", "cat > " + filePath
+//            };
+//
+//            Process process = Runtime.getRuntime().exec(command);
+//
+//            try (OutputStream outputStream = process.getOutputStream()) {
+//                outputStream.write(pythonCode.getBytes());
+//                outputStream.flush();
+//            }
+//
+//            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+//                 BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()))) {
+//
+//                String line;
+//                while ((line = reader.readLine()) != null) {
+//                    //send to websocket
+//                    sendToSession(sessionId, line);
+////                        System.out.println("Output: " + line);
+//                }
+//                while ((line = errorReader.readLine()) != null) {
+////                        System.err.println("Error: " + line);
+//                }
+//            }
+//
+//            int exitCode = process.waitFor();
+//            if (exitCode == 0) {
+//                System.out.println("Python code successfully saved to the container!");
+//            } else {
+//                System.err.println("Failed to save the Python code. Exit code: " + exitCode);
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//
+//    }
 }

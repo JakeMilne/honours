@@ -18,6 +18,10 @@
             width: 80%;
             height: 100px;
         }
+        #userinput {
+            width: 80%;
+            height: 50px;
+        }
         #runButton {
             padding: 10px;
         }
@@ -41,30 +45,61 @@
         function runCode() {
             const userCode = document.getElementById('usercode').value;
 
-
+            // Display the user's code in the conversation area
             const conversation = document.getElementById('conversation');
-            conversation.value += 'User: ' + userCode + '\n';
+            conversation.value += 'User (code): ' + userCode + '\n';
 
             conversation.scrollTop = conversation.scrollHeight;
 
+            // Send the code to the server for execution
             socket.send(JSON.stringify({
                 type: 'runCode',
                 code: userCode
             }));
 
-            document.getElementById('usercode').value = '';
+            // document.getElementById('usercode').value = '';  // Clear the user code textarea
         }
 
+        function sendInput() {
+            const userInput = document.getElementById('userinput').value;
 
+            // Display the user's input in the conversation area
+            const conversation = document.getElementById('conversation');
+            conversation.value += 'User (input): ' + userInput + '\n';
+
+            conversation.scrollTop = conversation.scrollHeight;
+
+            // Send the input to the server for processing in the running Python script
+            socket.send(JSON.stringify({
+                type: 'userInput',
+                input: userInput
+            }));
+
+            document.getElementById('userinput').value = '';  // Clear the input textarea
+        }
     </script>
 </head>
 <body>
 <h1>Code Editor</h1>
-
-<textarea id="conversation" readonly></textarea><br>
-
-<textarea id="usercode" rows="5" cols="80"></textarea><br>
+<p>name = input("input")
+    print(name)</p>
+<textarea id="usercode" placeholder="Enter your Python code here..." rows="5" cols="80"></textarea><br>
 
 <button id="runButton" onclick="runCode()">Run Code</button>
+
+<h2>Conversation</h2>
+<textarea id="conversation" readonly></textarea><br>
+
+<h2>User Input (for interacting with the running code)</h2>
+<textarea id="userinput" placeholder="Enter input to interact with the code..." rows="3" cols="80"></textarea><br>
+
+<button id="sendInputButton" onclick="sendInput()">Send Input</button>
+
 </body>
 </html>
+
+
+<!--dockerHandler dockerHandler = request.getSession().getAttribute("dockerHandler");
+        dockerHandler.saveUserFile(userCode, "/tmp/usercode.py");
+        dockerHandler.runPythonCode("/tmp/usercode.py");
+-->

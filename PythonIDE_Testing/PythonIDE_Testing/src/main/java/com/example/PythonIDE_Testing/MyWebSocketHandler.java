@@ -24,56 +24,23 @@ import java.io.StringReader;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-//@Component
-//public class MyWebSocketHandler extends TextWebSocketHandler {
-//
-//    private static final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
-//
-//    @Override
-//    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-//        sessions.put(session.getId(), session);
-//        System.out.println("WebSocket Connected: " + session.getId());
-//        session.sendMessage(new TextMessage("{\"type\":\"session_id\",\"data\":\"" + session.getId() + "\"}"));
-//    }
-//
-//    @Override
-//    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-//        sessions.remove(session.getId());
-//        System.out.println("WebSocket Disconnected: " + session.getId());
-//    }
-//
-//    @Override
-//    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-//        System.out.println("Received: " + message.getPayload());
-//        session.sendMessage(new TextMessage("Echo: " + message.getPayload()));
-//    }
-//
-//    public static WebSocketSession getSessionById(String sessionId) {
-//        return sessions.get(sessionId);
-//    }
-//
-//    public static void sendToSession(String sessionId, String message) {
-//        WebSocketSession session = sessions.get(sessionId);
-//        if (session != null && session.isOpen()) {
-//            try {
-//                session.sendMessage(new TextMessage(message));
-//            } catch (IOException e) {
-//                System.err.println("Error sending message to session " + sessionId + ": " + e.getMessage());
-//            }
-//        } else {
-//            System.err.println("Session not found or not open: " + sessionId);
-//        }
-//    }
-//}
+
 
 
 public class MyWebSocketHandler extends TextWebSocketHandler {
 
     private static final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
+    private dockerHandler docker = new dockerHandler();
+
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
+
+
         sessions.put(session.getId(), session);
+
+
+
     }
 
     @Override
@@ -83,29 +50,47 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
 
         if ("runCode".equals(type)) {
             String userCode = jsonMessage.getString("code");
-            String result = runUserCode(userCode);
-            sendMessageToUser(session, result);
+            runUserCode(userCode, session);
+//            sendMessageToUser(session, result);
+        }
+        if("userInput".equals(type)){
+            String userInput = jsonMessage.getString("input");
+            docker.addUserInput(userInput);
         }
     }
 
-    private String runUserCode(String code) {
-        dockerHandler.saveUserFile(code, "/app/usercode.py");
+    private void runUserCode(String code, WebSocketSession session) {
+        System.out.println(code);
+        docker.saveFile(code, "/tmp/usercode.py", false);
+        docker.runFile("/tmp/usercode.py", session, code);
+
+        //this might be completely crazy. But, I might need to tokenize the python myself and keep track of input messages to make it work..
 
         // need to call (+update) the runfile function in dockerHandler. maybe have another function to deal with interacting, call it the first time in runfile, then have a while in here that runs until the python is finished. would probably need to figure out how to identify the end of a python file, cant just go off of lines output
-        return "Executed code: " + code;
+//        return "Executed code: " + code;
     }
 
+
     private void sendMessageToUser(WebSocketSession session, String message) {
-        try {
-            session.sendMessage(new TextMessage(message));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+
+        try{
+
+                TextMessage textMessage = new TextMessage(message);
+                session.sendMessage(textMessage);
+        } catch (IOException e){
+        e.printStackTrace();
+    }
+
+
+
+
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session.getId());
     }
+
+
 }
 
