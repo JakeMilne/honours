@@ -24,7 +24,8 @@ public class codeGenerator {
     private int iterationCount = 0;
     private String[][] issues;
 
-
+    private LLM llm = new LLM("http://localhost:1234/v1/chat/completions", "meta-llama-3.1-8b-instruct", false, "");
+//    private LLM llm = new LLM("https://api.openai.com/v1/chat/completions", "gpt-4o-mini", true, System.getenv("OPENAI_API_KEY"));
 
     public codeGenerator() {}
 
@@ -33,22 +34,27 @@ public class codeGenerator {
         this.parameters = parameters;
         this.exampleOutputs = exampleOutputs;
         this.iterationCount = 0;
+
+
     }
 
     //getting the initial code from the LLM
     public static String callLM(String prompt) {
         try {
-            String url = "http://localhost:1234/v1/chat/completions";
 
             Gson gson = new Gson();
-            Map<String, Object> requestBody = Map.of(
-                    "model", "meta-llama-3.1-8b-instruct",
-                    "messages", List.of(
-                            Map.of("role", "system", "content", "You are a coding assistant that creates python code. Only Create python 3.9 code, offer no explanation, do not include anything in your answer other than python code. Only return 1 piece of code. Tag all code with ```python. DO not create any code that is not specified by the user. All code generated must be in the same class and file. All code must be placed inside the same block. Only return python code, and do not provide any additional context or instructions to the user, unless they are in a comment inside the python code. your response must contain exactly 1 block of python code, no more or less. UNDER NO CIRCUMSTANCES WHATSOEVER SHOULD YOU GIVE ME MORE THAN 1 BLOCK OF CODE."),
+            String url = llm.getUrl();
 
-                            Map.of("role", "user", "content", prompt)
-                    )
-            );
+
+                Map<String, Object> requestBody = Map.of(
+                        "model", llm.getModel(),
+                        "messages", List.of(
+                                Map.of("role", "system", "content", "You are a coding assistant that creates python code. Only Create python 3.9 code, offer no explanation, do not include anything in your answer other than python code. Only return 1 piece of code. Tag all code with ```python. DO not create any code that is not specified by the user. All code generated must be in the same class and file. All code must be placed inside the same block. Only return python code, and do not provide any additional context or instructions to the user, unless they are in a comment inside the python code. your response must contain exactly 1 block of python code, no more or less. UNDER NO CIRCUMSTANCES WHATSOEVER SHOULD YOU GIVE ME MORE THAN 1 BLOCK OF CODE."),
+
+                                Map.of("role", "user", "content", prompt)
+                        )
+                );
+
             String jsonBody = gson.toJson(requestBody);
 
 
@@ -56,11 +62,21 @@ public class codeGenerator {
                     .version(HttpClient.Version.HTTP_1_1)
                     .build();
 
+            if(llm.needsKey()){
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(url))
+                        .header("Content-Type", "application/json")
+                        .header("Authorization", "Bearer " + llm.getKey())
+                        .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                        .build();
+            }else{
+
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                     .build();
+            }
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
