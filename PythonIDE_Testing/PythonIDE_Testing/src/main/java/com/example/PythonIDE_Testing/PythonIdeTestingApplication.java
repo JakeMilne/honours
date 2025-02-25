@@ -14,7 +14,8 @@ import java.util.Map;
 public class PythonIdeTestingApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(PythonIdeTestingApplication.class, args);
+//		SpringApplication.run(PythonIdeTestingApplication.class, args);
+		Evaluation.eval();
 	}
 
 //	private static void startWebSocketServer() {

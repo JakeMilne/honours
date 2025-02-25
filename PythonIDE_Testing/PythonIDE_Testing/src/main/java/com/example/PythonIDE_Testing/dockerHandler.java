@@ -35,18 +35,18 @@ public class dockerHandler {
     public void saveFile(String pythonCode, String filePath, boolean strip) {
         System.out.println("Saving Python code to the container at: " + filePath);
 //            String strippedPythonCode = pythonCode;
-        System.out.println(pythonCode);
-        System.out.println("=============== Stripped Python code===============");
+//        System.out.println(pythonCode);
+//        System.out.println("=============== Stripped Python code===============");
         String strippedPythonCode = "";
         if(strip){
 
             strippedPythonCode = stripHtmlTags(pythonCode);
-            System.out.println(strippedPythonCode);
+//            System.out.println(strippedPythonCode);
         }else{
             strippedPythonCode = pythonCode;
-            System.out.println(strippedPythonCode);
+//            System.out.println(strippedPythonCode);
         }
-        System.out.println("============= Stripped Python code end =============");
+//        System.out.println("============= Stripped Python code end =============");
 
 //        String containerName = "pythonide_testing-app-1";
 

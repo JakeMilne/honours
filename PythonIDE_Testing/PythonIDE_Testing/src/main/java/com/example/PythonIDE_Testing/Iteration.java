@@ -28,4 +28,6 @@ public class Iteration {
     public void setVulnerabilities(ArrayList<Vulnerability> vulnerabilities) {
         this.vulnerabilities = vulnerabilities;
     }
+
+
 }
