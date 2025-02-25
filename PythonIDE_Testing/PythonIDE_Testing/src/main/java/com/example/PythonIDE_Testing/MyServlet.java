@@ -28,7 +28,20 @@ public class MyServlet extends HttpServlet {
 
         response.setContentType("text/html");
         PrintWriter writer = response.getWriter();
-        writer.println("<html>");
+//        writer.println("<html>");
+
+        writer.println("<html xmlns:th=\"http://www.thymeleaf.org\">");
+        writer.println("<head>");
+        writer.println("<meta charset=\"UTF-8\">");
+        writer.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+        writer.println("<title>Local Host</title>");
+        writer.println("<link rel=\"stylesheet\"\n" +
+                "        href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css\">");
+        writer.println("<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js\"></script>");
+
+        writer.println("</head>");
+
+
         // showing the users input, was/is used for testing
         writer.println("<h1>Prompt: " + userprompt + "</h1>");
         writer.println("<h1>parameters: " + parameter + "</h1>");
@@ -115,7 +128,18 @@ public class MyServlet extends HttpServlet {
         //showing stuff to the user
         response.setContentType("text/html");
         PrintWriter writer = response.getWriter();
-        writer.println("<html>");
+        writer.println("<html xmlns:th=\"http://www.thymeleaf.org\">");
+        writer.println("<head>");
+        writer.println("<meta charset=\"UTF-8\">");
+        writer.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+        writer.println("<title>Local Host</title>");
+        writer.println("<link rel=\"stylesheet\"\n" +
+                "        href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css\">");
+        writer.println("<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js\"></script>");
+
+        writer.println("</head>");
+
+
         writer.println("<h1>Prompt: " + userprompt + "</h1>");
         writer.println("<h1>Parameters: " + parameter + "</h1>");
         writer.println("<h1>Example output(s): " + exampleOutputs + "</h1>");
@@ -123,7 +147,7 @@ public class MyServlet extends HttpServlet {
             writer.println("<h1>Vulnerabilities Detected:</h1>");
             writer.println("<ul>");
             for (Vulnerability vuln : iterations.get(index).getVulnerabilities()) {
-                writer.println("<li>" + vuln.toString() + "</li>");
+                writer.println("<li>" + vuln.toStringWithHLink() + "</li>");
             }
             writer.println("</ul>");
         } else {
@@ -205,6 +229,20 @@ public class MyServlet extends HttpServlet {
         writer.println("    resize: none;");
         writer.println("  }");
         writer.println("</style>");
+        //download file function
+
+        writer.println("<script>");
+        writer.println("function downloadFile() {");
+        writer.println("const userCode = document.getElementById('usercode').value;");
+        writer.println("const blob = new Blob([userCode], { type: 'text/plain' });");
+        writer.println("const link = document.createElement('a');");
+        writer.println("link.href = window.URL.createObjectURL(blob);");
+        writer.println("link.download = 'usercode.py';");
+        writer.println("link.click();");
+        writer.println("}");
+        writer.println("</script>");
+
+
 
         writer.println("<form action=\"/userIDE\" method=\"POST\">");
         writer.println("<div class=\"editor-container\">");
@@ -212,6 +250,8 @@ public class MyServlet extends HttpServlet {
         writer.println("  <textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\" class=\"editor\" oninput=\"updateLines()\">" + code + "</textarea>");
         writer.println("</div>");
         writer.println("<input type=\"submit\" value=\"Check\">");
+        //button that lets user download file
+        writer.println("<button type=\"button\" onclick=\"downloadFile()\">Download</button>");
         writer.println("</form>");
 
         writer.println("<script>");

@@ -1,3 +1,4 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
 <html>
 <head>
@@ -19,24 +20,24 @@
         }
         #usercode {
             width: 80%;
-            height: 300px;
+            height: 100px;
         }
         #userinput {
             width: 80%;
             height: 50px;
         }
-        #runButton, #runBandit, #downloadButton, #sendInputButton {
+        #runButton {
             padding: 10px;
         }
     </style>
     <script>
         const socket = new WebSocket('ws://localhost:8083/ws');
 
-        socket.onopen = function () {
+        socket.onopen = function() {
             console.log('WebSocket connection established');
         };
 
-        socket.onmessage = function (event) {
+        socket.onmessage = function(event) {
             const result = event.data;
 
             const conversation = document.getElementById('conversation');
@@ -75,56 +76,19 @@
             document.getElementById('userinput').value = '';
         }
 
-        function runBandit(){
-
-            const userCode = document.getElementById('usercode').value;
-
-            socket.send(JSON.stringify({
-                type: 'runBandit',
-                code: userCode
-            }));
-
-
-        }
-
-        window.onload = function () {
-            const urlParams = new URLSearchParams(window.location.search);
-            const userCode = urlParams.get('userCode');
-            if (userCode) {
-                document.getElementById('usercode').value = decodeURIComponent(userCode);
-            }
+        // Set the usercode from the servlet
+        window.onload = function() {
+            const usercode = "${usercode != null ? usercode : ''}";
+            document.getElementById('usercode').value = usercode;
         };
-
-
-
-        function downloadFile() {
-            const userCode = document.getElementById('usercode').value;
-            const blob = new Blob([userCode], { type: 'text/plain' });
-            const link = document.createElement('a');
-            link.href = window.URL.createObjectURL(blob);
-            link.download = 'usercode.py';
-            link.click();
-        }
-
-
-
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const userCode = urlParams.get('userCode');
-        if (userCode) {
-            document.getElementById('usercode').value = userCode;
-        }
     </script>
 </head>
 <body>
 <h1>Code Editor</h1>
-<p>name = input("input")
-    print(name)</p>
 <textarea id="usercode" placeholder="Enter your Python code here..." rows="5" cols="80"></textarea><br>
 
 <button id="runButton" onclick="runCode()">Run Code</button>
-<button id="runBandit" onclick="runBandit()">Run Bandit</button>
-<button id="downloadButton" onclick="downloadFile()">Download Code</button>
+
 <h2>Conversation</h2>
 <textarea id="conversation" readonly></textarea><br>
 
@@ -132,7 +96,6 @@
 <textarea id="userinput" placeholder="Enter input to interact with the code..." rows="3" cols="80"></textarea><br>
 
 <button id="sendInputButton" onclick="sendInput()">Send Input</button>
-
 
 </body>
 </html>

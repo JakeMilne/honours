@@ -23,6 +23,8 @@ import jakarta.json.JsonObject;
 import java.io.StringReader;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.io.IOException;
+import java.util.ArrayList;
 
 
 
@@ -56,6 +58,22 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
         if("userInput".equals(type)){
             String userInput = jsonMessage.getString("input");
             docker.addUserInput(userInput);
+        }
+
+        if("runBandit".equals(type)){
+            String userCode = jsonMessage.getString("code");
+            docker.saveFile(userCode, "/tmp/usercode.py", false);
+            ArrayList<Vulnerability> vulnerabilities = docker.runBanditOnFile("/tmp/usercode.py");
+            sendMessageToUser(session, "Bandit Results:");
+            if(vulnerabilities.size() == 0){
+                sendMessageToUser(session, "No vulnerabilities found");
+            }else{
+                for(Vulnerability vulnerability : vulnerabilities){
+
+                    sendMessageToUser(session, vulnerability.toString());
+                }
+            }
+
         }
     }
 
