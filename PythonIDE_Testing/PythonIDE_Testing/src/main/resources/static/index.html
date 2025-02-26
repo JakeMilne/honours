@@ -68,24 +68,67 @@
             margin-top: 20px; /* Space above the submit button */
         }
     </style>
+
+    <script>
+        function addParameter() {
+            const container = document.getElementById('parameters-container');
+            const div = document.createElement('div');
+            div.classList.add('parameter');
+            div.innerHTML = `
+        <input type="text" name="paramName[]" placeholder="Parameter Name">
+        <input type="text" name="paramValue[]" placeholder="Parameter Value">
+        <button type="button" onclick="removeParameter(this)">Remove</button>
+    `;
+            container.appendChild(div);
+        }
+
+        function removeParameter(button) {
+            button.parentElement.remove();
+        }
+    </script>
 </head>
 <body>
 
 <div class="container">
+<!--    <form action="/MyServlet" method="POST">-->
+<!--        <div class="left-box">-->
+<!--            <label for="userprompt">Prompt:</label>-->
+<!--            <textarea type="text" id="userprompt" name="userprompt" value="Prompt"></textarea>-->
+<!--            <input type="submit" value="Submit"> &lt;!&ndash; Submit button within the form &ndash;&gt;-->
+<!--        </div>-->
+<!--        <div class="right-box">-->
+<!--            <label for="parameters">Parameters:</label>-->
+<!--            <input type="text" id="parameters" name="parameters" value="parameters">-->
+
+<!--            <label for="output">Output:</label>-->
+<!--            <input type="text" id="output" name="output" value="output">-->
+<!--        </div>-->
+<!--    </form>-->
+
     <form action="/MyServlet" method="POST">
         <div class="left-box">
             <label for="userprompt">Prompt:</label>
-            <textarea type="text" id="userprompt" name="userprompt" value="Prompt"></textarea>
-            <input type="submit" value="Submit"> <!-- Submit button within the form -->
+            <textarea id="userprompt" name="userprompt"></textarea>
+            <input type="submit" value="Submit">
         </div>
+
         <div class="right-box">
-            <label for="parameters">Parameters:</label>
-            <input type="text" id="parameters" name="parameters" value="parameters">
+            <label>Parameters:</label>
+            <div id="parameters-container">
+                <div class="parameter">
+                    <input type="text" name="paramName[]" placeholder="Parameter Name">
+                    <input type="text" name="paramValue[]" placeholder="Parameter Value">
+                    <button type="button" onclick="removeParameter(this)">Remove</button>
+                </div>
+            </div>
+            <button type="button" onclick="addParameter()">Add Parameter</button>
 
             <label for="output">Output:</label>
-            <input type="text" id="output" name="output" value="output">
+            <input type="text" id="output" name="output">
         </div>
     </form>
+
+
 </div>
 
 </body>

@@ -6,8 +6,20 @@ I think I need to pass websocket instance in the dopost for userIDE - maybe forg
 ^10/02
 
 sessionIDs are somewhat broken. using the next/previous iterations makes the id null. might just need to outright pass it when those buttons are pressed or something.
+thats fixed now
+
 
 also, found if the user goes back to the main page and tries to generate more code, it just stacks on top of the old code in the iterations arraylist. will need to reset it. maybe on submit?
-
+also fixed now
 
 think about evaluation
+
+
+few thoughts - add regenerate button onto ide after they run bandit.
+I think I can just have a boolean called banditResponse, set to true when bandit runs, false after they user replies or runs different code. with it true listen for yes/no, if the reply is yes regenerate. could also throw in a html form instead. might be a nicer format instead of typing an answer
+
+
+passing code to the ide needs improved as well.
+copilot just suggested a clear button on the ide and I dont disagree tbh
+
+

@@ -29,9 +29,9 @@ public class codeGenerator {
 
     public codeGenerator() {}
 
-    public codeGenerator(String prompt, String parameters, String exampleOutputs) {
+    public codeGenerator(String prompt, String[] paramNames, String exampleOutputs) {
         this.prompt = prompt;
-        this.parameters = parameters;
+        this.parameters = "";
         this.exampleOutputs = exampleOutputs;
         this.iterationCount = 0;
         this.llm = new LLM("https://api.openai.com/v1/chat/completions", "gpt-4o-mini", true, System.getenv("OPENAI_API_KEY"));

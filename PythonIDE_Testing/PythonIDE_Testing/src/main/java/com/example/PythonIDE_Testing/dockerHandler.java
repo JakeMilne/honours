@@ -34,9 +34,7 @@ public class dockerHandler {
 
     public void saveFile(String pythonCode, String filePath, boolean strip) {
         System.out.println("Saving Python code to the container at: " + filePath);
-//            String strippedPythonCode = pythonCode;
-//        System.out.println(pythonCode);
-//        System.out.println("=============== Stripped Python code===============");
+
         String strippedPythonCode = "";
         if(strip){
 
@@ -229,6 +227,7 @@ public class dockerHandler {
                     try {
                         int c;
                         String nextInput = inputs.peek();
+                        String oldInput = "";
                         boolean nextInputUsed = false;
 
 
@@ -246,12 +245,30 @@ public class dockerHandler {
 
 
                                 if (nextInput != null && lineBuffer.toString().contains(nextInput)) {
-                                    sendMessageToUser(session, "Detected input request");
-                                    sendMessageToUser(session, "line 245" + lineBuffer.toString());
-                                    inputs.poll();
-                                    nextInputUsed = true;
+                                    if(nextInput.length() == lineBuffer.toString().length()){
+                                        sendMessageToUser(session, "Detected input request");
+//                                        sendMessageToUser(session, "line 245" + lineBuffer.toString());
+                                        sendMessageToUser(session, lineBuffer.toString());
 
-                                    waitingForInput.set(true);
+                                        oldInput = inputs.poll();
+                                        nextInputUsed = true;
+
+                                        waitingForInput.set(true);
+                                    }
+//                                    sendMessageToUser(session, "Detected input request");
+//                                    sendMessageToUser(session, "line 245" + lineBuffer.toString());
+//                                    inputs.poll();
+//                                    nextInputUsed = true;
+//
+//                                    waitingForInput.set(true);
+//                                    if((oldInput.length() + nextInput.length()) == lineBuffer.toString().length()){
+//                                        sendMessageToUser(session, "Detected user input");
+//                                        sendMessageToUser(session, "line 245" + lineBuffer.toString().replace(nextInput, ""));
+////                                        inputs.poll();
+////                                        nextInputUsed = true;
+//
+////                                        waitingForInput.set(true);
+//                                    }
                                 }
 
 
@@ -272,7 +289,9 @@ public class dockerHandler {
                                     nextInputUsed = false;
                                     nextInput = inputs.peek();
                                 }
-                                sendMessageToUser(session, "line 262 " + line);
+//                                sendMessageToUser(session, "line 262 " + line);
+                                sendMessageToUser(session, line);
+
                                 System.out.println(line);
 
 
@@ -339,7 +358,7 @@ public class dockerHandler {
 
 
     public void addUserInput(String input) {
-        System.out.println("adding to input queue");
+        System.out.println("adding to input queue: " + input);
         inputQueue.offer(input);
     }
 

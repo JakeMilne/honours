@@ -12,7 +12,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import com.opencsv.CSVWriter;
 import java.io.FileWriter;
 
-
+//https://github.com/tuhh-softsec/LLMSecEval/
 
 public class Evaluation{
     //nD array containing prompt, how many vulnerabilities in the first iteration, how many vulnerabilities in the second iteration, third iteration
@@ -67,7 +67,7 @@ public class Evaluation{
 
 
     public static ArrayList<Iteration> getVulnerabilities(String prompt){
-        codeGenerator generator = new codeGenerator(prompt, "", "");
+        codeGenerator generator = new codeGenerator(prompt, new String[0], "");
         String callresponse = generator.callLM(prompt);
 
         // response handler object parses LLM responses

@@ -10,6 +10,11 @@ import java.io.PrintWriter;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import org.springframework.web.socket.WebSocketSession;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.HashSet;
 
 
 
@@ -23,8 +28,14 @@ public class MyServlet extends HttpServlet {
 
         // storing user input
         String userprompt = request.getParameter("userprompt");
-        String parameter = request.getParameter("parameters");
+//        String parameter = request.getParameter("parameters");
         String exampleOutputs = request.getParameter("exampleOutputs");
+
+        if (paramNames != null) {
+            //different prompt perhaps?
+        }
+        String[] paramNames = request.getParameterValues("paramName[]");
+        String[] paramValues = request.getParameterValues("paramValue[]");
 
         response.setContentType("text/html");
         PrintWriter writer = response.getWriter();
@@ -40,15 +51,26 @@ public class MyServlet extends HttpServlet {
         writer.println("<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js\"></script>");
 
         writer.println("</head>");
+        String allParamNames = "";
+        for(String string : paramNames) {
+            allParamNames += string + ", ";
+        }
+
+        String allParamValues = "";
+        for(String string : paramValues) {
+            allParamValues += string + ", ";
+        }
 
 
         // showing the users input, was/is used for testing
         writer.println("<h1>Prompt: " + userprompt + "</h1>");
-        writer.println("<h1>parameters: " + parameter + "</h1>");
+        writer.println("<h1>parameters: " + allParamNames+ "</h1>");
+        writer.println("<h1>parameter values: " + allParamValues + "</h1>");
+
         writer.println("<h1>example output(s): " + exampleOutputs + "</h1>");
 
         // code generator object handles LLM calls
-        codeGenerator generator = new codeGenerator(userprompt, parameter, exampleOutputs);
+        codeGenerator generator = new codeGenerator(userprompt, paramNames, exampleOutputs);
         String callresponse = generator.callLM(userprompt);
 
         // response handler object parses LLM responses
@@ -92,7 +114,7 @@ public class MyServlet extends HttpServlet {
 //            return;
 //        }
 
-        generateForm(code, writer);
+        generateForm(code, writer, iterations.get(index).getVulnerabilities());
 
 //        writer.println("<form action=\"/MyServlet\" method=\"POST\" onsubmit=\"redirectToIDE()\">");
 //        writer.println("<textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\">" + code + "</textarea><br>");
@@ -159,7 +181,7 @@ public class MyServlet extends HttpServlet {
         String code = iterations.get(index).getCode().replace("<br>", "\n").replace("<pre>", "").replace("</pre>", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
 
 
-        generateForm(code, writer);
+        generateForm(code, writer, iterations.get(index).getVulnerabilities());
 //        writer.println(iterations.get(index).getCode());
 
         if (index > 0) {
@@ -208,7 +230,16 @@ public class MyServlet extends HttpServlet {
 
 
     }
-    public void generateForm(String code, PrintWriter writer) {
+    public void generateForm(String code, PrintWriter writer, ArrayList<Vulnerability> vulnerabilities) {
+        Set<Integer> highlightedLines = new HashSet<>();
+        for (Vulnerability vulnerability : vulnerabilities) {
+            List<Integer> lines = lineNumbers(vulnerability.getCodeSnippet());
+            if (lines != null) {
+                highlightedLines.addAll(lines);
+                System.out.println(highlightedLines.toString());
+            }
+        }
+
         writer.println("<style>");
         writer.println("  .editor-container { display: flex; font-family: monospace; }");
         writer.println("  .line-numbers { ");
@@ -228,6 +259,12 @@ public class MyServlet extends HttpServlet {
         writer.println("    border: 1px solid #ccc;");
         writer.println("    resize: none;");
         writer.println("  }");
+        writer.println("  .highlight {");
+        writer.println("    background-color: yellow;");
+        writer.println("  }");
+
+
+
         writer.println("</style>");
         //download file function
 
@@ -255,16 +292,50 @@ public class MyServlet extends HttpServlet {
         writer.println("</form>");
 
         writer.println("<script>");
-        writer.println("  function updateLines() {");
+        writer.println("  function updateLines(highlightedLines) {");
         writer.println("    let textarea = document.getElementById(\"usercode\");");
         writer.println("    let lines = textarea.value.split(\"\\n\").length;");
         writer.println("    let lineNumberArea = document.getElementById(\"lineNumbers\");");
-        writer.println("    lineNumberArea.innerHTML = Array.from({length: lines}, (_, i) => (i + 1)).join(\"\\n\");");
+        writer.println("    ");
+        writer.println("    // Clear and recreate line numbers");
+        writer.println("    lineNumberArea.innerHTML = ''; ");
+        writer.println("    for (let i = 0; i < lines; i++) {");
+        writer.println("      let lineDiv = document.createElement('div');");
+        writer.println("      lineDiv.id = 'line-' + (i + 1);");
+        writer.println("      lineDiv.textContent = i + 1;");
+        writer.println("      lineNumberArea.appendChild(lineDiv);");
+        writer.println("    }");
+        writer.println("    ");
+        writer.println("    // Highlight specified lines");
+        writer.println("    highlightedLines.forEach(line => {");
+        writer.println("      let lineElement = document.getElementById('line-' + line);");
+        writer.println("      if (lineElement) {");
+        writer.println("        lineElement.classList.add('highlight');");
+        writer.println("      }");
+        writer.println("    });");
         writer.println("  }");
-        writer.println("  updateLines();");
+        writer.println("  const highlightedLines = " + highlightedLines.toString() + ";");
+        writer.println("  updateLines(highlightedLines);");
         writer.println("</script>");
 
 
+
+
+
+
+    }
+
+    public List<Integer> lineNumbers(String snippet){
+        Pattern pattern = Pattern.compile("(?m)^\\d+");
+        Matcher matcher = pattern.matcher(snippet);
+        List<Integer> lineNumbers = new ArrayList<>();
+
+        while (matcher.find()) {
+            lineNumbers.add(Integer.parseInt(matcher.group()));
+        }
+
+        System.out.println(lineNumbers);
+        return lineNumbers;
     }
 
 }
