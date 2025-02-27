@@ -67,7 +67,7 @@ public class Evaluation{
 
 
     public static ArrayList<Iteration> getVulnerabilities(String prompt){
-        codeGenerator generator = new codeGenerator(prompt, new String[0], "");
+        codeGenerator generator = new codeGenerator(prompt, new String[0], new String[0], new String[0], new String[0]);
         String callresponse = generator.callLM(prompt);
 
         // response handler object parses LLM responses

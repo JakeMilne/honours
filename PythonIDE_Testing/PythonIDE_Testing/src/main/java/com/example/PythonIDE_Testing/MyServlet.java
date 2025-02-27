@@ -31,11 +31,14 @@ public class MyServlet extends HttpServlet {
 //        String parameter = request.getParameter("parameters");
         String exampleOutputs = request.getParameter("exampleOutputs");
 
-        if (paramNames != null) {
-            //different prompt perhaps?
-        }
+//        if (paramNames != null) {
+//            //different prompt perhaps?
+//        }
         String[] paramNames = request.getParameterValues("paramName[]");
         String[] paramValues = request.getParameterValues("paramValue[]");
+
+        String[] outputNames = request.getParameterValues("outputName[]");
+        String[] outputValues = request.getParameterValues("outputValue[]");
 
         response.setContentType("text/html");
         PrintWriter writer = response.getWriter();
@@ -66,11 +69,14 @@ public class MyServlet extends HttpServlet {
         writer.println("<h1>Prompt: " + userprompt + "</h1>");
         writer.println("<h1>parameters: " + allParamNames+ "</h1>");
         writer.println("<h1>parameter values: " + allParamValues + "</h1>");
-
-        writer.println("<h1>example output(s): " + exampleOutputs + "</h1>");
+        String outputsCat = "";
+        for(int i = 0; i < outputNames.length; i++) {
+            outputsCat += "" + outputNames[i] + ": : " + outputValues[i] + ", ";
+        }
+        writer.println("<h1>example output(s): " + outputsCat + "</h1>");
 
         // code generator object handles LLM calls
-        codeGenerator generator = new codeGenerator(userprompt, paramNames, exampleOutputs);
+        codeGenerator generator = new codeGenerator(userprompt, paramNames, outputNames, paramValues, outputValues);
         String callresponse = generator.callLM(userprompt);
 
         // response handler object parses LLM responses

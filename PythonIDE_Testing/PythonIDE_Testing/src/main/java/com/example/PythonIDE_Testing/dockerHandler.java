@@ -211,8 +211,13 @@ public class dockerHandler {
     public void runFile(String filePath, WebSocketSession session, String code) {
         new Thread(() -> {
             try {
+                Queue<String> testCase = new LinkedList<>();
+                String testSuccess = ".----------------------------------------------------------------------Ran \\d+ test in \\d+\\.\\d+sOK";
+                String testFailure = "----------------------------------------------------------------------Ran \\d+ test in \\d+\\.\\d+s FAILED \\(failures=\\d+\\)";
+
                 System.out.println("Running Python script: " + filePath);
                 ProcessBuilder scriptBuilder = new ProcessBuilder("docker", "exec", "-i", containerName, "python3", "-u", filePath);
+                scriptBuilder.redirectErrorStream(true);
                 Process process = scriptBuilder.start();
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -273,14 +278,14 @@ public class dockerHandler {
 
 
                             if (ch == '\n') {
-                                System.out.println("NEW LINE");
-                                System.out.println("NEW LINE");
-                                System.out.println("NEW LINE");
-                                System.out.println("NEW LINE");
-                                System.out.println("NEW LINE");
-                                System.out.println("NEW LINE");
-                                System.out.println("NEW LINE");
-                                System.out.println("NEW LINE");
+//                                System.out.println("NEW LINE");
+//                                System.out.println("NEW LINE");
+//                                System.out.println("NEW LINE");
+//                                System.out.println("NEW LINE");
+//                                System.out.println("NEW LINE");
+//                                System.out.println("NEW LINE");
+//                                System.out.println("NEW LINE");
+//                                System.out.println("NEW LINE");
 
 
                                 String line = lineBuffer.toString().trim();
@@ -293,6 +298,17 @@ public class dockerHandler {
                                 sendMessageToUser(session, line);
 
                                 System.out.println(line);
+                                if (testCase.size() == 5) {
+                                    testCase.poll();
+                                }
+                                testCase.offer(line);
+                                if(checkPattern(testSuccess, testCase)){
+                                    sendMessageToUser(session, "Test success");
+
+                                }
+                                if(checkPattern(testFailure, testCase)){
+                                    sendMessageToUser(session, "Test failure");
+                                }
 
 
                                 lineBuffer.setLength(0);
@@ -312,12 +328,15 @@ public class dockerHandler {
                     try {
                         String line;
                         while ((line = errorReader.readLine()) != null) {
-                            sendMessageToUser(session, "Error: " + line);
+                            if (!line.trim().isEmpty()) {
+                                sendMessageToUser(session, "Error: " + line);
+                            }
                         }
                     } catch (IOException e) {
                         sendMessageToUser(session, "Error reading: " + e.getMessage());
                     }
                 });
+
 
                 outputThread.start();
                 errorThread.start();
@@ -346,7 +365,11 @@ public class dockerHandler {
                 }
 
                 int exitCode = process.waitFor();
-                sendMessageToUser(session, "Process completed with code: " + exitCode);
+                if (exitCode != 0) {
+                    sendMessageToUser(session, "Process completed with error code: " + exitCode);
+                } else {
+                    sendMessageToUser(session, "Process completed successfully.");
+                }
 
             } catch (Exception e) {
                 sendMessageToUser(session, "Process error: " + e.getMessage());
@@ -377,6 +400,27 @@ public class dockerHandler {
             }
         }
     }
+
+    private boolean checkPattern(String pattern, Queue<String> testCase) {
+        StringBuilder concatenatedLines = new StringBuilder();
+        for (String line : testCase) {
+            concatenatedLines.append(line);
+
+        }
+//        System.out.println("Concatenated lines: " + concatenatedLines.toString());
+//        System.out.println("Pattern: " + pattern);
+
+
+        java.util.regex.Pattern regexPattern = java.util.regex.Pattern.compile(pattern);
+        java.util.regex.Matcher matcher = regexPattern.matcher(concatenatedLines.toString());
+
+        if (matcher.find()) {
+            System.out.println("Pattern found! " + pattern);
+            return true;
+        }
+        return false;
+    }
+
 
     //for the userIDE endpoint
 //    public void saveUserFile(String pythonCode, String filePath) {

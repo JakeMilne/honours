@@ -19,24 +19,57 @@ public class codeGenerator {
 //    private String[] parameters;
     private String parameters;
 //    private String[] exampleOutputs;
-    private String exampleOutputs;
+    private String[] outputNames;
+    private String[] outputValues;
     public int iterationCap = 3;
     private int iterationCount = 0;
     private String[][] issues;
     private LLM llm;
+    private String[] paramNames;
+    private String[] paramValues;
 //    private LLM llm = new LLM("http://localhost:1234/v1/chat/completions", "meta-llama-3.1-8b-instruct", false, "");
 //    private LLM llm = new LLM("https://api.openai.com/v1/chat/completions", "gpt-4o-mini", true, System.getenv("OPENAI_API_KEY"));
 
     public codeGenerator() {}
 
-    public codeGenerator(String prompt, String[] paramNames, String exampleOutputs) {
+    public codeGenerator(String prompt, String[] paramNames, String[] outputNames, String[] paramValues, String[] outputValues) {
         this.prompt = prompt;
         this.parameters = "";
-        this.exampleOutputs = exampleOutputs;
+        this.outputNames = outputNames;
+        this.outputValues = outputValues;
         this.iterationCount = 0;
+        this.paramNames = paramNames;
+        this.paramValues = paramValues;
+        for(String string : paramNames){
+            System.out.println("Param Name: " + string);
+        }
+        for(String string : paramValues){
+            System.out.println("Param Value: " + string);
+        }
         this.llm = new LLM("https://api.openai.com/v1/chat/completions", "gpt-4o-mini", true, System.getenv("OPENAI_API_KEY"));
 
 
+    }
+
+
+    public String getPrompt() {
+        return prompt;
+    }
+
+    public String[] getOutputNames() {
+        return outputNames;
+    }
+
+    public String[] getOutputValues() {
+        return outputValues;
+    }
+
+    public String[] getParamNames() {
+        return paramNames;
+    }
+
+    public String[] getParamValues() {
+        return paramValues;
     }
 
     //getting the initial code from the LLM
@@ -63,7 +96,7 @@ public class codeGenerator {
 //
 //            String jsonBody = gson.toJson(requestBody);
 
-            HttpRequest request = llm.buildCall(prompt);
+            HttpRequest request = llm.buildCall(prompt, this);
 
 
             HttpClient client = HttpClient.newBuilder()

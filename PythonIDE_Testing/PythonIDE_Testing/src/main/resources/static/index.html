@@ -75,17 +75,30 @@
             const div = document.createElement('div');
             div.classList.add('parameter');
             div.innerHTML = `
-        <input type="text" name="paramName[]" placeholder="Parameter Name">
-        <input type="text" name="paramValue[]" placeholder="Parameter Value">
-        <button type="button" onclick="removeParameter(this)">Remove</button>
-    `;
+            <input type="text" name="paramName[]" placeholder="Parameter Name">
+            <input type="text" name="paramValue[]" placeholder="Parameter Value">
+            <button type="button" onclick="removeElement(this)">Remove</button>
+        `;
             container.appendChild(div);
         }
 
-        function removeParameter(button) {
+        function addOutput() {
+            const container = document.getElementById('outputs-container');
+            const div = document.createElement('div');
+            div.classList.add('output');
+            div.innerHTML = `
+            <input type="text" name="outputName[]" placeholder="Output Name">
+            <input type="text" name="outputValue[]" placeholder="Output Value">
+            <button type="button" onclick="removeElement(this)">Remove</button>
+        `;
+            container.appendChild(div);
+        }
+
+        function removeElement(button) {
             button.parentElement.remove();
         }
     </script>
+
 </head>
 <body>
 
@@ -118,13 +131,20 @@
                 <div class="parameter">
                     <input type="text" name="paramName[]" placeholder="Parameter Name">
                     <input type="text" name="paramValue[]" placeholder="Parameter Value">
-                    <button type="button" onclick="removeParameter(this)">Remove</button>
+                    <button type="button" onclick="removeElement(this)">Remove</button>
                 </div>
             </div>
             <button type="button" onclick="addParameter()">Add Parameter</button>
 
-            <label for="output">Output:</label>
-            <input type="text" id="output" name="output">
+            <label>Outputs:</label>
+            <div id="outputs-container">
+                <div class="output">
+                    <input type="text" name="outputName[]" placeholder="Output Name">
+                    <input type="text" name="outputValue[]" placeholder="Output Value">
+                    <button type="button" onclick="removeElement(this)">Remove</button>
+                </div>
+            </div>
+            <button type="button" onclick="addOutput()">Add Output</button>
         </div>
     </form>
 
