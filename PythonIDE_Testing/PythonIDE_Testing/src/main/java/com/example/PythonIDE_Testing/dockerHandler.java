@@ -213,8 +213,10 @@ public class dockerHandler {
             try {
                 Queue<String> testCase = new LinkedList<>();
                 String testSuccess = ".----------------------------------------------------------------------Ran \\d+ test in \\d+\\.\\d+sOK";
-                String testFailure = "----------------------------------------------------------------------Ran \\d+ test in \\d+\\.\\d+s FAILED \\(failures=\\d+\\)";
-
+//                String testFailure = "----------------------------------------------------------------------Ran \\d+ test in \\d+\\.\\d+s FAILED \\(failures=\\d+\\)";
+//                String testFailure = "FAIL:\\s+(\\S+)\\s+\\(([^)]+)\\)\\s+[-]+\\s+Traceback \\(most recent call last\\):\\s+File\\s+\"([^\"]+)\",\\s+line\\s+(\\d+),\\s+in\\s+(\\S+)\\s+self\\.assertEqual\\(result,\\s*(\\d+)\\)\\s+AssertionError:\\s*(\\d+)\\s*!=\\s*(\\d+)";
+                String testFailure = "FAIL: ([^=]+).*?Traceback \\(most recent call last\\):.*?File \"([^\"]+)\", line (\\d+), in ([^A-Z]+).*?(AssertionError: .+?)------+Ran (\\d+) test.+?FAILED \\(failures=(\\d+)\\)";
+//                String testFailure = "(?m)^Server: FAIL: ([^\\n]+).*?Server: Traceback \\(most recent call last\\):.*?Server: File \"([^\"]+)\", line (\\d+), in ([^\\n]+).*?Server: (AssertionError: .+)$";
                 System.out.println("Running Python script: " + filePath);
                 ProcessBuilder scriptBuilder = new ProcessBuilder("docker", "exec", "-i", containerName, "python3", "-u", filePath);
                 scriptBuilder.redirectErrorStream(true);
@@ -298,7 +300,7 @@ public class dockerHandler {
                                 sendMessageToUser(session, line);
 
                                 System.out.println(line);
-                                if (testCase.size() == 5) {
+                                if (testCase.size() == 15) {
                                     testCase.poll();
                                 }
                                 testCase.offer(line);
@@ -308,6 +310,7 @@ public class dockerHandler {
                                 }
                                 if(checkPattern(testFailure, testCase)){
                                     sendMessageToUser(session, "Test failure");
+                                    //at this point, regenerate using testCase toString.
                                 }
 
 
@@ -316,7 +319,7 @@ public class dockerHandler {
                         }
 
                         if (lineBuffer.length() > 0) {
-                            sendMessageToUser(session, "line 271 " + lineBuffer.toString());
+                            sendMessageToUser(session, lineBuffer.toString());
                         }
 
                     } catch (IOException e) {
@@ -409,8 +412,13 @@ public class dockerHandler {
         }
 //        System.out.println("Concatenated lines: " + concatenatedLines.toString());
 //        System.out.println("Pattern: " + pattern);
-
-
+        System.out.println();
+        System.out.println();
+        System.out.println("Pattern");
+        System.out.println(pattern);
+        System.out.println();
+        System.out.println("output");
+        System.out.println(concatenatedLines);
         java.util.regex.Pattern regexPattern = java.util.regex.Pattern.compile(pattern);
         java.util.regex.Matcher matcher = regexPattern.matcher(concatenatedLines.toString());
 
@@ -420,6 +428,181 @@ public class dockerHandler {
         }
         return false;
     }
+
+
+//    public String runFileForGenerator(String filePath, WebSocketSession session, String code) {
+//        new Thread(() -> {
+//            try {
+//                Queue<String> testCase = new LinkedList<>();
+//                String testSuccess = ".----------------------------------------------------------------------Ran \\d+ test in \\d+\\.\\d+sOK";
+////                String testFailure = "----------------------------------------------------------------------Ran \\d+ test in \\d+\\.\\d+s FAILED \\(failures=\\d+\\)";
+////                String testFailure = "FAIL:\\s+(\\S+)\\s+\\(([^)]+)\\)\\s+[-]+\\s+Traceback \\(most recent call last\\):\\s+File\\s+\"([^\"]+)\",\\s+line\\s+(\\d+),\\s+in\\s+(\\S+)\\s+self\\.assertEqual\\(result,\\s*(\\d+)\\)\\s+AssertionError:\\s*(\\d+)\\s*!=\\s*(\\d+)";
+//                String testFailure = "FAIL: ([^=]+).*?Traceback \\(most recent call last\\):.*?File \"([^\"]+)\", line (\\d+), in ([^A-Z]+).*?(AssertionError: .+?)------+Ran (\\d+) test.+?FAILED \\(failures=(\\d+)\\)";
+////                String testFailure = "(?m)^Server: FAIL: ([^\\n]+).*?Server: Traceback \\(most recent call last\\):.*?Server: File \"([^\"]+)\", line (\\d+), in ([^\\n]+).*?Server: (AssertionError: .+)$";
+//                System.out.println("Running Python script: " + filePath);
+//                ProcessBuilder scriptBuilder = new ProcessBuilder("docker", "exec", "-i", containerName, "python3", "-u", filePath);
+//                scriptBuilder.redirectErrorStream(true);
+//                Process process = scriptBuilder.start();
+//
+//                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+//                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
+//                BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+//
+//                AtomicBoolean waitingForInput = new AtomicBoolean(false);
+//                Queue<String> inputs = parseInputs(code);
+//
+//
+//                Thread outputThread = new Thread(() -> {
+//                    try {
+//                        int c;
+//                        String nextInput = inputs.peek();
+//                        String oldInput = "";
+//                        boolean nextInputUsed = false;
+//
+//
+//                        System.out.println("Reading output");
+//                        StringBuilder lineBuffer = new StringBuilder();
+//                        while ((c = reader.read()) != -1) {
+//                            //using chars causes an issue with inputs. right now when the user responds to an input request, the server responds with the text from the input
+//                            //function + the first char of the users response, then it keeps sending responses building onto this with the next char of the users response and so on
+//                            char ch = (char) c;
+//                            lineBuffer.append(ch);
+////                            System.out.println(lineBuffer.toString());
+//
+//
+////                            sendMessageToUser(session, lineBuffer.toString());
+//
+//
+//                            if (nextInput != null && lineBuffer.toString().contains(nextInput)) {
+//                                if(nextInput.length() == lineBuffer.toString().length()){
+//                                    sendMessageToUser(session, "Detected input request");
+////                                        sendMessageToUser(session, "line 245" + lineBuffer.toString());
+//                                    sendMessageToUser(session, lineBuffer.toString());
+//
+//                                    oldInput = inputs.poll();
+//                                    nextInputUsed = true;
+//
+//                                    waitingForInput.set(true);
+//                                }
+////                                    sendMessageToUser(session, "Detected input request");
+////                                    sendMessageToUser(session, "line 245" + lineBuffer.toString());
+////                                    inputs.poll();
+////                                    nextInputUsed = true;
+////
+////                                    waitingForInput.set(true);
+////                                    if((oldInput.length() + nextInput.length()) == lineBuffer.toString().length()){
+////                                        sendMessageToUser(session, "Detected user input");
+////                                        sendMessageToUser(session, "line 245" + lineBuffer.toString().replace(nextInput, ""));
+//////                                        inputs.poll();
+//////                                        nextInputUsed = true;
+////
+//////                                        waitingForInput.set(true);
+////                                    }
+//                            }
+//
+//
+//                            if (ch == '\n') {
+////                                System.out.println("NEW LINE");
+////                                System.out.println("NEW LINE");
+////                                System.out.println("NEW LINE");
+////                                System.out.println("NEW LINE");
+////                                System.out.println("NEW LINE");
+////                                System.out.println("NEW LINE");
+////                                System.out.println("NEW LINE");
+////                                System.out.println("NEW LINE");
+//
+//
+//                                String line = lineBuffer.toString().trim();
+//                                if(nextInput != null && line.contains(nextInput)){
+//                                    line = line.replace(nextInput, "");
+//                                    nextInputUsed = false;
+//                                    nextInput = inputs.peek();
+//                                }
+////                                sendMessageToUser(session, "line 262 " + line);
+//                                sendMessageToUser(session, line);
+//
+//                                System.out.println(line);
+//                                if (testCase.size() == 15) {
+//                                    testCase.poll();
+//                                }
+//                                testCase.offer(line);
+//                                if(checkPattern(testSuccess, testCase)){
+//                                    sendMessageToUser(session, "Test success");
+//
+//                                }
+//                                if(checkPattern(testFailure, testCase)){
+//                                    sendMessageToUser(session, "Test failure");
+//                                    return (testCase.toString());
+//                                    //at this point, regenerate using testCase toString.
+//                                }
+//
+//
+//                                lineBuffer.setLength(0);
+//                            }
+//                        }
+//
+//                        if (lineBuffer.length() > 0) {
+//                            sendMessageToUser(session, lineBuffer.toString());
+//                        }
+//
+//                    } catch (IOException e) {
+//                        sendMessageToUser(session, "Output error: " + e.getMessage());
+//                    }
+//                });
+//
+//                Thread errorThread = new Thread(() -> {
+//                    try {
+//                        String line;
+//                        while ((line = errorReader.readLine()) != null) {
+//                            if (!line.trim().isEmpty()) {
+//                                sendMessageToUser(session, "Error: " + line);
+//                            }
+//                        }
+//                    } catch (IOException e) {
+//                        sendMessageToUser(session, "Error reading: " + e.getMessage());
+//                    }
+//                });
+//
+//
+//                outputThread.start();
+//                errorThread.start();
+//
+//                while (process.isAlive()) {
+//                    if (waitingForInput.get() && !inputQueue.isEmpty()) {
+//                        try {
+//                            String input = inputQueue.poll();
+//                            if (input != null) {
+//                                sendMessageToUser(session, "Sending input: " + input);
+//                                writer.write(input + "\n");
+//                                writer.flush();
+//                                waitingForInput.set(false);
+//                            }
+//                        } catch (IOException e) {
+//                            sendMessageToUser(session, "Input error: " + e.getMessage());
+//                        }
+//                    }
+//
+//                    try {
+//                        Thread.sleep(50);
+//                    } catch (InterruptedException e) {
+//                        Thread.currentThread().interrupt();
+//                        break;
+//                    }
+//                }
+//
+//                int exitCode = process.waitFor();
+//                if (exitCode != 0) {
+//                    sendMessageToUser(session, "Process completed with error code: " + exitCode);
+//                } else {
+//                    sendMessageToUser(session, "Process completed successfully.");
+//                    return null;
+//                }
+//
+//            } catch (Exception e) {
+//                sendMessageToUser(session, "Process error: " + e.getMessage());
+//            }
+//        }).start();
+//    }
 
 
     //for the userIDE endpoint

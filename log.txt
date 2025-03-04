@@ -23,3 +23,8 @@ passing code to the ide needs improved as well.
 copilot just suggested a clear button on the ide and I dont disagree tbh
 
 
+
+from kyle -
+parse python into chunks - ie by function using indents
+make frontend more nice
+add more llms - maybe another language

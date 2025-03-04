@@ -65,19 +65,21 @@ public class LLM {
     }
 
     public Map<String, Object> buildPrompt(String prompt, codeGenerator generator){
+        System.out.println(generator.getParamNames().length);
+        System.out.println(generator.getOutputNames().length);
 
-        if((generator.getParamNames().length == 0) && (generator.getOutputNames().length == 0)){
-
+        if((generator.getParamNames().length == 1) && (generator.getOutputNames().length == 1) && (((generator.getParamValues() != null && generator.getParamValues().length > 0) ? generator.getParamValues()[0] : null) == "") && (((generator.getOutputValues() != null && generator.getOutputValues().length > 0) ? generator.getOutputValues()[0] : null) == "")){
+            System.out.println("no params or outputs");
             Map<String, Object> requestBody = Map.of(
                     "model", this.model,
                     "messages", List.of(
-                            Map.of("role", "system", "content", "You are a coding assistant that creates python code. Only Create python 3.9 code, offer no explanation, do not include anything in your answer other than python code. Only return 1 piece of code. Tag all code with ```python. DO not create any code that is not specified by the user. All code generated must be in the same class and file. All code must be placed inside the same block. Only return python code, and do not provide any additional context or instructions to the user, unless they are in a comment inside the python code. your response must contain exactly 1 block of python code, no more or less. UNDER NO CIRCUMSTANCES WHATSOEVER SHOULD YOU GIVE ME MORE THAN 1 BLOCK OF CODE. unit tests must use the unittest package."),
+                            Map.of("role", "system", "content", "You are a coding assistant that creates python code. Only Create python 3.9 code, offer no explanation, do not include anything in your answer other than python code. Only return 1 piece of code. Tag all code with ```python. DO not create any code that is not specified by the user. All code generated must be in the same class and file. All code must be placed inside the same block. Only return python code, and do not provide any additional context or instructions to the user, unless they are in a comment inside the python code. your response must contain exactly 1 block of python code, no more or less. UNDER NO CIRCUMSTANCES WHATSOEVER SHOULD YOU GIVE ME MORE THAN 1 BLOCK OF CODE."),
 
                             Map.of("role", "user", "content", prompt)
                     )
             );
             return requestBody;
-        }else if(generator.getParamNames().length == 0){
+        }else if((generator.getParamNames().length == 0) && (((generator.getParamValues() != null && generator.getParamValues().length > 0) ? generator.getParamValues()[0] : null) == "")){
             String[] outputNames = generator.getOutputNames();
             String[] outputValues = generator.getOutputValues();
             prompt = prompt + " you must also create and implement a unit test for the code for the following output(s): ";
