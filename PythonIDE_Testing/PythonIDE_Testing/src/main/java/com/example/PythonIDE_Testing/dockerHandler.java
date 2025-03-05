@@ -223,7 +223,11 @@ public class dockerHandler {
                 Process process = scriptBuilder.start();
 
                 BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
+                BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+
                 BufferedReader codeReader = new BufferedReader(new StringReader(code));
+
                 String line;
                 ArrayList<Function> functionCalls = new ArrayList<>();
                 ArrayList<Inputs> inputList = new ArrayList<>();
@@ -235,8 +239,6 @@ public class dockerHandler {
                 ArrayList<PythonChunk> chunks = rootChunk.getChildren();
 
                 while ((line = codeReader.readLine()) != null) {
-                    System.out.println("Code line: " + line);
-
                     if (!(getFunctionCall(line).equals("false"))) {
                         PythonChunk functionChunk = findChunk(line, rootChunk);
                         functionCalls.add(new Function(getFunctionCall(line), functionChunk));
@@ -253,22 +255,24 @@ public class dockerHandler {
                         }
                     }
                 }
-                ArrayList<String> inputs = rootChunk.getInputs();
 
                 Thread outputThread = new Thread(() -> {
                     try {
+                        System.out.println("In output thread");
                         int c;
                         String newLine;
-                        while ((newLine = reader.readLine()) != null) {
-                            System.out.println(newLine);
-                            System.out.println("Reading output");
+                        System.out.println("HELLO");
+                        if(reader.readLine() == null){
+                            System.out.println("No output");
+                        }
+                        System.out.println("hi");
                             StringBuilder lineBuffer2 = new StringBuilder();
                             AtomicBoolean waitingForInput = new AtomicBoolean(false);
 
                             while ((c = reader.read()) != -1) {
                                 char ch = (char) c;
                                 lineBuffer2.append(ch);
-
+                                System.out.println(lineBuffer2.toString());
                                 for (Inputs input : inputList) {
                                     if (lineBuffer2.toString().contains(input.getCall())) {
                                         sendMessageToUser(session, "Detected input request");
@@ -300,21 +304,59 @@ public class dockerHandler {
                                     lineBuffer2.setLength(0);
                                 }
                             }
-                        }
                     } catch (Exception e) {
                         sendMessageToUser(session, "Output error: " + e.getMessage());
                         throw new RuntimeException(e);
                     }
                 });
 
+                Thread errorThread = new Thread(() -> {
+                    try {
+                        String errorline;
+                        while ((errorline = errorReader.readLine()) != null) {
+                            if (!errorline.trim().isEmpty()) {
+                                sendMessageToUser(session, "Error: " + errorline);
+                            }
+                        }
+                    } catch (IOException e) {
+                        sendMessageToUser(session, "Error reading: " + e.getMessage());
+                    }
+                });
+
                 outputThread.start();
-                outputThread.join();
+                errorThread.start();
+
+                while (process.isAlive()) {
+                    AtomicBoolean waitingForInput = new AtomicBoolean(false);
+
+                    if (waitingForInput.get() && !inputQueue.isEmpty()) {
+                        try {
+                            String input = inputQueue.poll();
+                            if (input != null) {
+                                sendMessageToUser(session, "Sending input: " + input);
+                                writer.write(input + "\n");
+                                writer.flush();
+                                waitingForInput.set(false);  // Set the waiting flag to false
+                            }
+                        } catch (IOException e) {
+                            sendMessageToUser(session, "Input error: " + e.getMessage());
+                        }
+                    }
+
+                    try {
+                        Thread.sleep(50);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
             } catch (Exception e) {
                 sendMessageToUser(session, "Output error: " + e.getMessage());
                 throw new RuntimeException(e);
             }
         }).start();
     }
+
 
 
 
