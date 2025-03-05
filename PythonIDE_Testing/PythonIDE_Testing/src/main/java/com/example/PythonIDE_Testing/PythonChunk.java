@@ -1,47 +1,50 @@
 package com.example.PythonIDE_Testing;
+
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class PythonChunk {
-    String chunk;
-    String definition;
-    PythonChunk[] children;
-    ArrayList<String> inputs;
+    private String chunk;
+    private String definition;
+    private ArrayList<PythonChunk> children;
+    private ArrayList<String> inputs;
+    private PythonChunk parent;
 
-    public PythonChunk(String chunk, String definition) {
+    public PythonChunk(String chunk, String definition, PythonChunk parent) {
         this.chunk = chunk;
         this.definition = definition;
-        this.children = new PythonChunk[0];
+        this.children = new ArrayList<>();
         this.inputs = new ArrayList<>();
+        this.parent = parent;
     }
 
-    public static PythonChunk parse(String pythonCode) {
+    public PythonChunk getParent() {
+        return parent;
+    }
+
+    public String getDefinition() {
+        return definition;
+    }
+
+    public PythonChunk parse(String pythonCode) {
         String[] lines = pythonCode.split("\n");
-        StringBuilder fullCode = new StringBuilder();
-        for (String line : lines) {
-            fullCode.append(line).append("\n");
-        }
-
-        PythonChunk rootChunk = new PythonChunk(fullCode.toString(), "root");
-        ArrayList<PythonChunk> topLevelChunks = new ArrayList<>();
-
+        PythonChunk rootChunk = new PythonChunk(pythonCode, "root", null);
         int i = 0;
+
         while (i < lines.length) {
-            ChunkResult result = parseChunk(lines, i, 0);
+            ChunkResult result = parseChunk(lines, i, 0, rootChunk);
             if (result != null) {
-                topLevelChunks.add(result.chunk);
+                rootChunk.children.add(result.chunk);
                 i = result.endIndex;
             } else {
                 i++;
             }
         }
-
-        rootChunk.children = topLevelChunks.toArray(new PythonChunk[0]);
         return rootChunk;
     }
 
-    private static class ChunkResult {
+    private class ChunkResult {
         PythonChunk chunk;
         int endIndex;
 
@@ -51,7 +54,7 @@ public class PythonChunk {
         }
     }
 
-    private static ChunkResult parseChunk(String[] lines, int startIndex, int indentation) {
+    private ChunkResult parseChunk(String[] lines, int startIndex, int indentation, PythonChunk parent) {
         if (startIndex >= lines.length) {
             return null;
         }
@@ -80,6 +83,7 @@ public class PythonChunk {
         int i = startIndex + 1;
         while (i < lines.length) {
             String line = lines[i];
+
             if (line.trim().isEmpty() || line.trim().startsWith("#")) {
                 chunkBuilder.append(line).append("\n");
                 i++;
@@ -90,6 +94,16 @@ public class PythonChunk {
             if (lineIndent.length() <= indentation) {
                 break;
             }
+
+            if (isDefinitionLine(line.trim()) && lineIndent.length() > currentIndentation) {
+                ChunkResult childChunk = parseChunk(lines, i, lineIndent.length(), parent);
+                if (childChunk != null) {
+                    children.add(childChunk.chunk);
+                    i = childChunk.endIndex;
+                    continue;
+                }
+            }
+
             chunkBuilder.append(line).append("\n");
 
             Matcher inputMatcher = Pattern.compile("input\\(\\s*\"(.*?)\"\\s*\\)").matcher(line);
@@ -101,19 +115,27 @@ public class PythonChunk {
         }
 
         String chunkStr = chunkBuilder.toString();
-        PythonChunk pythonChunk = new PythonChunk(chunkStr, currentLine.trim());
+        PythonChunk pythonChunk = new PythonChunk(chunkStr, currentLine.trim(), parent);
         pythonChunk.inputs = detectedInputs;
+        pythonChunk.children = children;
 
-        pythonChunk.children = children.toArray(new PythonChunk[0]);
         return new ChunkResult(pythonChunk, i);
     }
 
-    private static String getIndentation(String line) {
+    private String getIndentation(String line) {
         Matcher matcher = Pattern.compile("^(\\s*)").matcher(line);
         return matcher.find() ? matcher.group(1) : "";
     }
 
-    private static boolean isDefinitionLine(String line) {
+    public ArrayList<PythonChunk> getChildren() {
+        return children;
+    }
+
+    public ArrayList<String> getInputs() {
+        return inputs;
+    }
+
+    private boolean isDefinitionLine(String line) {
         if ((line.startsWith("class ") || line.startsWith("def ")) && line.contains(":")) {
             return true;
         }
@@ -129,7 +151,7 @@ public class PythonChunk {
     public void print(int level) {
         String indent = "  ".repeat(level);
         System.out.println(indent + "Definition: " + definition);
-        System.out.println(indent + "Children: " + children.length);
+        System.out.println(indent + "Children: " + children.size());
         for (PythonChunk child : children) {
             child.print(level + 1);
         }
@@ -138,8 +160,8 @@ public class PythonChunk {
         }
     }
 
-    public static void test(String pythonCode) {
-        PythonChunk rootChunk = PythonChunk.parse(pythonCode);
+    public void test(String pythonCode) {
+        PythonChunk rootChunk = parse(pythonCode);
         System.out.println("Parsed Python Chunks:");
         rootChunk.print(0);
     }
