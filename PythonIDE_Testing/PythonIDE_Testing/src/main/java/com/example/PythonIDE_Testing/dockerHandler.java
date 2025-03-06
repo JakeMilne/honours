@@ -4,20 +4,25 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
+
 import java.io.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.ArrayList;
 //import javax.websocket.Session;
 import org.springframework.web.socket.WebSocketSession;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import org.springframework.web.socket.TextMessage;
+
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.TimeUnit;
 import java.util.Queue;
 import java.util.LinkedList;
+import java.util.Iterator;
 
 public class dockerHandler {
 
@@ -27,8 +32,6 @@ public class dockerHandler {
     private final Object webSocketLock = new Object();
 
 
-
-
     public dockerHandler() {
     }
 
@@ -36,11 +39,11 @@ public class dockerHandler {
         System.out.println("Saving Python code to the container at: " + filePath);
 
         String strippedPythonCode = "";
-        if(strip){
+        if (strip) {
 
             strippedPythonCode = stripHtmlTags(pythonCode);
 //            System.out.println(strippedPythonCode);
-        }else{
+        } else {
             strippedPythonCode = pythonCode;
 //            System.out.println(strippedPythonCode);
         }
@@ -194,7 +197,7 @@ public class dockerHandler {
         return text;
     }
 
-    public Queue<String> parseInputs(String code){
+    public Queue<String> parseInputs(String code) {
         Queue<String> inputs = new LinkedList<>();
         String regex = "input\\(\\s*\"(.*?)\"\\s*\\)";
         Pattern pattern = Pattern.compile(regex);
@@ -208,11 +211,11 @@ public class dockerHandler {
     }
 
 
-
-
     public void runFile(String filePath, WebSocketSession session, String code) {
         new Thread(() -> {
             try {
+                inputQueue.clear();
+                AtomicBoolean waitingForInput = new AtomicBoolean(false);
                 Queue<String> testCase = new LinkedList<>();
                 String testSuccess = ".----------------------------------------------------------------------Ran \\d+ test in \\d+\\.\\d+sOK";
                 String testFailure = "FAIL: ([^=]+).*?Traceback \\(most recent call last\\):.*?File \"([^\"]+)\", line (\\d+), in ([^A-Z]+).*?(AssertionError: .+?)------+Ran (\\d+) test.+?FAILED \\(failures=(\\d+)\\)";
@@ -236,8 +239,16 @@ public class dockerHandler {
                 StringBuilder lineBuffer = new StringBuilder();
 
                 PythonChunk rootChunk = new PythonChunk(code, "root", null).parse(code);
-                ArrayList<PythonChunk> chunks = rootChunk.getChildren();
+                ArrayList<PythonChunk> chunks = new ArrayList<>();
+                chunks.add(rootChunk);
 
+                chunks = getAllChunks(chunks);
+
+                if (chunks.size() == 0) {
+                    System.out.println("Size is 0 for some reason");
+                    System.out.println(rootChunk.toString());
+                    chunks.add(rootChunk);
+                }
                 while ((line = codeReader.readLine()) != null) {
                     if (!(getFunctionCall(line).equals("false"))) {
                         PythonChunk functionChunk = findChunk(line, rootChunk);
@@ -246,6 +257,7 @@ public class dockerHandler {
                 }
 
                 for (PythonChunk chunk : chunks) {
+                    System.out.println(chunk.toString());
                     for (String input : chunk.getInputs()) {
                         System.out.println("Input: " + input);
                         if (chunk.getParent() == null) {
@@ -258,57 +270,78 @@ public class dockerHandler {
 
                 Thread outputThread = new Thread(() -> {
                     try {
-                        System.out.println("In output thread");
+//                        System.out.println("In output thread");
                         int c;
                         String newLine;
                         System.out.println("HELLO");
-                        if(reader.readLine() == null){
-                            System.out.println("No output");
-                        }
+
                         System.out.println("hi");
-                            StringBuilder lineBuffer2 = new StringBuilder();
-                            AtomicBoolean waitingForInput = new AtomicBoolean(false);
+                        StringBuilder lineBuffer2 = new StringBuilder();
+                        System.out.println("2");
+                        System.out.println("3");
 
-                            while ((c = reader.read()) != -1) {
-                                char ch = (char) c;
-                                lineBuffer2.append(ch);
-                                System.out.println(lineBuffer2.toString());
-                                for (Inputs input : inputList) {
-                                    if (lineBuffer2.toString().contains(input.getCall())) {
-                                        sendMessageToUser(session, "Detected input request");
-                                        sendMessageToUser(session, lineBuffer2.toString());
-                                        if (input.getSingle()) {
-                                            inputList.remove(input);
-                                        }
-                                        waitingForInput.set(true);
+                        ArrayList<Inputs> usedInputs = new ArrayList<>();
+                        while ((c = reader.read()) != -1) {
+//                            sendMessageToUser(session, "In output thread");
+                            char ch = (char) c;
+                            lineBuffer2.append(ch);
+                            System.out.println(lineBuffer2.toString());
+                            System.out.println(inputList.size());
+
+                            Iterator<Inputs> iterator = inputList.iterator();
+                            while (iterator.hasNext()) {
+                                Inputs input = iterator.next();
+                                System.out.println("INPUT CALL: ");
+                                System.out.println(input.getCall());
+                                if (lineBuffer2.toString().contains(input.getCall())) {
+
+                                    sendMessageToUser(session, "line 295 Detected input request");
+                                    usedInputs.add(input);
+
+                                    sendMessageToUser(session, "line 298 " + lineBuffer2.toString());
+                                    if (lineBuffer2.indexOf(input.getCall()) != -1) {
+                                        lineBuffer2.delete(lineBuffer2.indexOf(input.getCall()), lineBuffer2.indexOf(input.getCall()) + input.getCall().length());
                                     }
-                                }
-
-                                if (ch == '\n') {
-                                    String outputLine = lineBuffer2.toString().trim();
-                                    sendMessageToUser(session, outputLine);
-                                    System.out.println(outputLine);
-
-                                    if (testCase.size() == 15) {
-                                        testCase.poll();
+                                    if (input.getSingle()) {
+                                        iterator.remove();
                                     }
-                                    testCase.offer(outputLine);
-
-                                    if (checkPattern(testSuccess, testCase)) {
-                                        sendMessageToUser(session, "Test success");
-                                    }
-                                    if (checkPattern(testFailure, testCase)) {
-                                        sendMessageToUser(session, "Test failure");
-                                    }
-
-                                    lineBuffer2.setLength(0);
+                                    waitingForInput.set(true);
                                 }
                             }
+
+                            if (ch == '\n') {
+                                String outputLine = lineBuffer2.toString().trim();
+                                System.out.println("308 " + inputList.size());
+                                for (Inputs input : usedInputs) {
+                                    System.out.println("line 309 " + input.getCall());
+                                    if (outputLine.contains(input.getCall())) {
+                                        outputLine = outputLine.replace(input.getCall(), "");
+                                    }
+                                }
+                                sendMessageToUser(session, "line 315 " + outputLine);
+                                System.out.println(outputLine);
+
+                                if (testCase.size() == 15) {
+                                    testCase.poll();
+                                }
+                                testCase.offer(outputLine);
+
+                                if (checkPattern(testSuccess, testCase)) {
+                                    sendMessageToUser(session, "Test success");
+                                }
+                                if (checkPattern(testFailure, testCase)) {
+                                    sendMessageToUser(session, "Test failure");
+                                }
+
+                                lineBuffer2.setLength(0);
+                            }
+                        }
                     } catch (Exception e) {
                         sendMessageToUser(session, "Output error: " + e.getMessage());
                         throw new RuntimeException(e);
                     }
                 });
+
 
                 Thread errorThread = new Thread(() -> {
                     try {
@@ -327,13 +360,12 @@ public class dockerHandler {
                 errorThread.start();
 
                 while (process.isAlive()) {
-                    AtomicBoolean waitingForInput = new AtomicBoolean(false);
 
                     if (waitingForInput.get() && !inputQueue.isEmpty()) {
                         try {
                             String input = inputQueue.poll();
                             if (input != null) {
-                                sendMessageToUser(session, "Sending input: " + input);
+                                sendMessageToUser(session, " line 376 Sending input: " + input);
                                 writer.write(input + "\n");
                                 writer.flush();
                                 waitingForInput.set(false);  // Set the waiting flag to false
@@ -358,8 +390,6 @@ public class dockerHandler {
     }
 
 
-
-
     public static String readFileFromContainer(String containerName, String filePath) throws IOException, InterruptedException {
         ProcessBuilder scriptBuilder = new ProcessBuilder("docker", "exec", "-i", containerName, "cat", filePath);
         Process process = scriptBuilder.start();
@@ -380,12 +410,12 @@ public class dockerHandler {
     }
 
 
-    public static ArrayList<String> getDefinitions(String code){
+    public static ArrayList<String> getDefinitions(String code) {
         //goes over code and finds all lines containing python definitions, i.e functions, loops, classes, etc
         ArrayList<String> definitions = new ArrayList<>();
         String[] lines = code.split("\n");
-        for(String line : lines){
-            if(line.contains("def") || line.contains("class") || line.contains("for") || line.contains("while") || line.contains("if") || line.contains("elif") || line.contains("else")){
+        for (String line : lines) {
+            if (line.contains("def") || line.contains("class") || line.contains("for") || line.contains("while") || line.contains("if") || line.contains("elif") || line.contains("else")) {
                 definitions.add(line);
             }
         }
@@ -398,23 +428,23 @@ public class dockerHandler {
         return matcher.find() ? matcher.group(1) + "(" : "false";
     }
 
-    public static PythonChunk findChunk(String line, PythonChunk rootChunk){
+    public static PythonChunk findChunk(String line, PythonChunk rootChunk) {
         ArrayList<PythonChunk> chunks = rootChunk.getChildren();
-        for(PythonChunk chunk : chunks){
-            if(chunk.getDefinition().contains(line)){
+        for (PythonChunk chunk : chunks) {
+            if (chunk.getDefinition().contains(line)) {
                 return chunk;
             }
         }
         return null;
     }
 
-    public String checkInput(String line){
+    public String checkInput(String line) {
         String regex = "input\\(\\s*\"(.*?)\"\\s*\\)";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(line);
 
         while (matcher.find()) {
-            return(matcher.group(1));
+            return (matcher.group(1));
         }
         return null;
     }
@@ -448,13 +478,13 @@ public class dockerHandler {
         }
 //        System.out.println("Concatenated lines: " + concatenatedLines.toString());
 //        System.out.println("Pattern: " + pattern);
-        System.out.println();
-        System.out.println();
-        System.out.println("Pattern");
-        System.out.println(pattern);
-        System.out.println();
-        System.out.println("output");
-        System.out.println(concatenatedLines);
+//        System.out.println();
+//        System.out.println();
+//        System.out.println("Pattern");
+//        System.out.println(pattern);
+//        System.out.println();
+//        System.out.println("output");
+//        System.out.println(concatenatedLines);
         java.util.regex.Pattern regexPattern = java.util.regex.Pattern.compile(pattern);
         java.util.regex.Matcher matcher = regexPattern.matcher(concatenatedLines.toString());
 
@@ -465,7 +495,17 @@ public class dockerHandler {
         return false;
     }
 
+    public static ArrayList<PythonChunk> getAllChunks(ArrayList<PythonChunk> chunks) {
 
+        ArrayList<PythonChunk> allChunks = new ArrayList<>();
+        for (PythonChunk chunk : chunks) {
+            allChunks.add(chunk);
+            allChunks.addAll(getAllChunks(chunk.getChildren()));
+        }
+
+        return allChunks;
+
+    }
 //    public String runFileForGenerator(String filePath, WebSocketSession session, String code) {
 //        new Thread(() -> {
 //            try {
@@ -688,9 +728,6 @@ public class dockerHandler {
 //    }
 
 
-
-
-
     public void runFile1(String filePath, WebSocketSession session, String code) {
         new Thread(() -> {
             try {
@@ -703,8 +740,6 @@ public class dockerHandler {
                 System.out.println("Running Python script: " + filePath);
                 ProcessBuilder scriptBuilder = new ProcessBuilder("docker", "exec", "-i", containerName, "python3", "-u", filePath);
                 //get code from filePath in the docker container
-
-
 
 
                 scriptBuilder.redirectErrorStream(true);
@@ -740,7 +775,7 @@ public class dockerHandler {
 
 
                             if (nextInput != null && lineBuffer.toString().contains(nextInput)) {
-                                if(nextInput.length() == lineBuffer.toString().length()){
+                                if (nextInput.length() == lineBuffer.toString().length()) {
                                     sendMessageToUser(session, "Detected input request");
 //                                        sendMessageToUser(session, "line 245" + lineBuffer.toString());
                                     sendMessageToUser(session, lineBuffer.toString());
@@ -779,7 +814,7 @@ public class dockerHandler {
 
 
                                 String line = lineBuffer.toString().trim();
-                                if(nextInput != null && line.contains(nextInput)){
+                                if (nextInput != null && line.contains(nextInput)) {
                                     line = line.replace(nextInput, "");
                                     nextInputUsed = false;
                                     nextInput = inputs.peek();
@@ -792,11 +827,11 @@ public class dockerHandler {
                                     testCase.poll();
                                 }
                                 testCase.offer(line);
-                                if(checkPattern(testSuccess, testCase)){
+                                if (checkPattern(testSuccess, testCase)) {
                                     sendMessageToUser(session, "Test success");
 
                                 }
-                                if(checkPattern(testFailure, testCase)){
+                                if (checkPattern(testFailure, testCase)) {
                                     sendMessageToUser(session, "Test failure");
                                     //at this point, regenerate using testCase toString.
                                 }

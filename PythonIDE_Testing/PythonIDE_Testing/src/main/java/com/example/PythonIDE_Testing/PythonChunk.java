@@ -30,6 +30,7 @@ public class PythonChunk {
     public PythonChunk parse(String pythonCode) {
         String[] lines = pythonCode.split("\n");
         PythonChunk rootChunk = new PythonChunk(pythonCode, "root", null);
+        rootChunk.inputs = detectInputs(pythonCode);
         int i = 0;
 
         while (i < lines.length) {
@@ -43,6 +44,24 @@ public class PythonChunk {
         }
         return rootChunk;
     }
+
+    private ArrayList<String> detectInputs(String pythonCode) {
+        ArrayList<String> detectedInputs = new ArrayList<>();
+        String[] lines = pythonCode.split("\n");
+
+        Pattern pattern = Pattern.compile("input\\(\\s*\"(.*?)\"\\s*\\)");
+
+        for (String line : lines) {
+            if (getIndentation(line).isEmpty()) {
+                Matcher matcher = pattern.matcher(line);
+                while (matcher.find()) {
+                    detectedInputs.add(matcher.group(1));
+                }
+            }
+        }
+        return detectedInputs;
+    }
+
 
     private class ChunkResult {
         PythonChunk chunk;
@@ -133,6 +152,14 @@ public class PythonChunk {
 
     public ArrayList<String> getInputs() {
         return inputs;
+    }
+
+    public String toString() {
+        return "PythonChunk{" +
+                "definition='" + definition + '\'' +
+                ", children=" + children +
+                ", inputs=" + inputs +
+                '}';
     }
 
     private boolean isDefinitionLine(String line) {
