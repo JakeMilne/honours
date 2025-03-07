@@ -5,17 +5,19 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
+
 import org.springframework.web.socket.WebSocketSession;
+
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.HashSet;
-
 
 
 @WebServlet("/MyServlet")
@@ -49,28 +51,29 @@ public class MyServlet extends HttpServlet {
         writer.println("<meta charset=\"UTF-8\">");
         writer.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
         writer.println("<title>Local Host</title>");
+        writer.println("<link rel=\"stylesheet\" href=\"styles.css\">");
         writer.println("<link rel=\"stylesheet\"\n" +
                 "        href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css\">");
         writer.println("<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js\"></script>");
 
         writer.println("</head>");
         String allParamNames = "";
-        for(String string : paramNames) {
+        for (String string : paramNames) {
             allParamNames += string + ", ";
         }
 
         String allParamValues = "";
-        for(String string : paramValues) {
+        for (String string : paramValues) {
             allParamValues += string + ", ";
         }
 
 
         // showing the users input, was/is used for testing
         writer.println("<h1>Prompt: " + userprompt + "</h1>");
-        writer.println("<h1>parameters: " + allParamNames+ "</h1>");
+        writer.println("<h1>parameters: " + allParamNames + "</h1>");
         writer.println("<h1>parameter values: " + allParamValues + "</h1>");
         String outputsCat = "";
-        for(int i = 0; i < outputNames.length; i++) {
+        for (int i = 0; i < outputNames.length; i++) {
             outputsCat += "" + outputNames[i] + ": : " + outputValues[i] + ", ";
         }
         writer.println("<h1>example output(s): " + outputsCat + "</h1>");
@@ -161,6 +164,7 @@ public class MyServlet extends HttpServlet {
         writer.println("<meta charset=\"UTF-8\">");
         writer.println("<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
         writer.println("<title>Local Host</title>");
+        writer.println("<link rel=\"stylesheet\" href=\"styles.css\">");
         writer.println("<link rel=\"stylesheet\"\n" +
                 "        href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css\">");
         writer.println("<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js\"></script>");
@@ -171,7 +175,7 @@ public class MyServlet extends HttpServlet {
         writer.println("<h1>Prompt: " + userprompt + "</h1>");
         writer.println("<h1>Parameters: " + parameter + "</h1>");
         writer.println("<h1>Example output(s): " + exampleOutputs + "</h1>");
-        if(iterations.get(index).getVulnerabilities().size() > 0) {
+        if (iterations.get(index).getVulnerabilities().size() > 0) {
             writer.println("<h1>Vulnerabilities Detected:</h1>");
             writer.println("<ul>");
             for (Vulnerability vuln : iterations.get(index).getVulnerabilities()) {
@@ -205,37 +209,38 @@ public class MyServlet extends HttpServlet {
     public void runTests(codeGenerator generator, ResponseHandler responseHandler, String content,
                          HttpServletResponse response, PrintWriter writer, HttpServletRequest request) {
 
-            //dockerHandler object deals with saving files and doing stuff such as calling bandit on files
+        //dockerHandler object deals with saving files and doing stuff such as calling bandit on files
 
-            dockerHandler docker = new dockerHandler();
+        dockerHandler docker = new dockerHandler();
 
-            //adding docker to session variables
-            request.getSession().setAttribute("dockerHandler", docker);
+        //adding docker to session variables
+        request.getSession().setAttribute("dockerHandler", docker);
 
 
-            String filePath = "/tmp/script.py";
-            docker.saveFile(content, filePath, true);
-            ArrayList<Vulnerability> vulnerabilities = docker.runBanditOnFile(filePath);
-            iterations.add(new Iteration(content, vulnerabilities));
-            String newContent = "";
+        String filePath = "/tmp/script.py";
+        docker.saveFile(content, filePath, true);
+        ArrayList<Vulnerability> vulnerabilities = docker.runBanditOnFile(filePath);
+        iterations.add(new Iteration(content, vulnerabilities));
+        String newContent = "";
 
-            while(!vulnerabilities.isEmpty() && (generator.getIterationCount() <= generator.iterationCap)) {
-                generator.incrementIterationCount();
-                newContent = generator.regenerateForVulnerability(content, vulnerabilities);
-                String newCode = responseHandler.extractCode(newContent);
-                filePath = "/tmp/script" + generator.getIterationCount() + ".py";
-                docker.saveFile(newCode, filePath, true);
-                vulnerabilities = docker.runBanditOnFile(filePath);
-                newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
-                iterations.add(new Iteration(newCode, vulnerabilities));
-            }
+        while (!vulnerabilities.isEmpty() && (generator.getIterationCount() <= generator.iterationCap)) {
+            generator.incrementIterationCount();
+            newContent = generator.regenerateForVulnerability(content, vulnerabilities);
+            String newCode = responseHandler.extractCode(newContent);
+            filePath = "/tmp/script" + generator.getIterationCount() + ".py";
+            docker.saveFile(newCode, filePath, true);
+            vulnerabilities = docker.runBanditOnFile(filePath);
+            newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
+            iterations.add(new Iteration(newCode, vulnerabilities));
+        }
 
-            if(generator.getIterationCount() > generator.iterationCap) {
-                writer.println("<h1>Iteration cap reached</h1>");
-            }
+        if (generator.getIterationCount() > generator.iterationCap) {
+            writer.println("<h1>Iteration cap reached</h1>");
+        }
 
 
     }
+
     public void generateForm(String code, PrintWriter writer, ArrayList<Vulnerability> vulnerabilities) {
         Set<Integer> highlightedLines = new HashSet<>();
         for (Vulnerability vulnerability : vulnerabilities) {
@@ -270,7 +275,6 @@ public class MyServlet extends HttpServlet {
         writer.println("  }");
 
 
-
         writer.println("</style>");
         //download file function
 
@@ -284,7 +288,6 @@ public class MyServlet extends HttpServlet {
         writer.println("link.click();");
         writer.println("}");
         writer.println("</script>");
-
 
 
         writer.println("<form action=\"/userIDE\" method=\"POST\">");
@@ -325,13 +328,9 @@ public class MyServlet extends HttpServlet {
         writer.println("</script>");
 
 
-
-
-
-
     }
 
-    public List<Integer> lineNumbers(String snippet){
+    public List<Integer> lineNumbers(String snippet) {
         Pattern pattern = Pattern.compile("(?m)^\\d+");
         Matcher matcher = pattern.matcher(snippet);
         List<Integer> lineNumbers = new ArrayList<>();

@@ -1,0 +1,119 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    margin: 20px;
+    text-align: center;
+}
+
+h1, h2 {
+    color: #343a40;
+    margin-bottom: 10px;
+}
+
+p {
+    font-size: 16px;
+    color: #495057;
+}
+
+textarea {
+    width: 80%;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    font-family: monospace;
+    background-color: #ffffff;
+    font-size: 14px;
+}
+
+button {
+    padding: 10px 15px;
+    margin: 5px;
+    font-size: 16px;
+    color: #fff;
+    background-color: #007bff;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.editor-container {
+    display: flex;
+    font-family: monospace;
+    text-align: left;
+    margin: auto;
+    width: 80%;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: #ffffff;
+}
+
+.line-numbers {
+    text-align: right;
+    padding-right: 10px;
+    user-select: none;
+    font-size: 14px;
+    line-height: 1.2em;
+    margin: 0;
+    padding-top: 6px;
+    color: #6c757d;
+}
+
+.editor {
+    font-size: 14px;
+    line-height: 1.2em;
+    padding: 6px;
+    margin: 0;
+    border: none;
+    resize: none;
+    width: 100%;
+}
+
+.highlight {
+    background-color: yellow;
+}
+
+#conversation-container {
+    display: none;
+    margin-top: 20px;
+}
+
+#conversation {
+    height: 300px;
+    white-space: pre-wrap;
+    overflow-y: auto;
+    background-color: #f8f9fa;
+    font-size: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    border-radius: 5px;
+}
+
+.user-message {
+    background-color: #ffffff;
+    color: #000000;
+    padding: 8px;
+    border-radius: 5px;
+    align-self: flex-end;
+    margin: 5px;
+    border: 1px solid #ced4da;
+    max-width: 75%;
+}
+
+.server-message {
+    background-color: #e9ecef;
+    color: #000000;
+    padding: 8px;
+    border-radius: 5px;
+    align-self: flex-start;
+    margin: 5px;
+    border: 1px solid #adb5bd;
+    max-width: 75%;
+}

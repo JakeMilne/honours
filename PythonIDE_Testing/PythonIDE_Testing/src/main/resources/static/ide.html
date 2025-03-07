@@ -5,30 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Local Host</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <style>
-        #conversation {
-            width: 80%;
-            height: 300px;
-            margin-bottom: 10px;
-            padding: 10px;
-            border: 1px solid #ccc;
-            font-family: monospace;
-            white-space: pre-wrap;
-            overflow-y: auto;
-        }
-        #usercode {
-            width: 80%;
-            height: 300px;
-        }
-        #userinput {
-            width: 80%;
-            height: 50px;
-        }
-        #runButton, #runBandit, #downloadButton, #sendInputButton {
-            padding: 10px;
-        }
-    </style>
     <script>
         const socket = new WebSocket('ws://localhost:8083/ws');
 
@@ -38,53 +16,42 @@
 
         socket.onmessage = function (event) {
             const result = event.data;
-
             const conversation = document.getElementById('conversation');
-            conversation.value += 'Server: ' + result + '\n';
-
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('server-message');
+            messageElement.textContent = 'Server: ' + result;
+            conversation.appendChild(messageElement);
             conversation.scrollTop = conversation.scrollHeight;
         };
 
         function runCode() {
+            document.getElementById('conversation-container').style.display = 'block';
             const userCode = document.getElementById('usercode').value;
-
             const conversation = document.getElementById('conversation');
-            conversation.value += 'User (code): ' + userCode + '\n';
-
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('user-message');
+            messageElement.textContent = 'User (code): ' + userCode;
+            conversation.appendChild(messageElement);
             conversation.scrollTop = conversation.scrollHeight;
-
-            socket.send(JSON.stringify({
-                type: 'runCode',
-                code: userCode
-            }));
+            socket.send(JSON.stringify({type: 'runCode', code: userCode}));
         }
 
         function sendInput() {
             const userInput = document.getElementById('userinput').value;
-
             const conversation = document.getElementById('conversation');
-            conversation.value += 'User (input): ' + userInput + '\n';
-
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('user-message');
+            messageElement.textContent = 'User (input): ' + userInput;
+            conversation.appendChild(messageElement);
             conversation.scrollTop = conversation.scrollHeight;
-
-            socket.send(JSON.stringify({
-                type: 'userInput',
-                input: userInput
-            }));
-
+            socket.send(JSON.stringify({type: 'userInput', input: userInput}));
             document.getElementById('userinput').value = '';
         }
 
-        function runBandit(){
-
+        function runBandit() {
+            document.getElementById('conversation-container').style.display = 'block';
             const userCode = document.getElementById('usercode').value;
-
-            socket.send(JSON.stringify({
-                type: 'runBandit',
-                code: userCode
-            }));
-
-
+            socket.send(JSON.stringify({type: 'runBandit', code: userCode}));
         }
 
         window.onload = function () {
@@ -95,44 +62,30 @@
             }
         };
 
-
-
         function downloadFile() {
             const userCode = document.getElementById('usercode').value;
-            const blob = new Blob([userCode], { type: 'text/plain' });
+            const blob = new Blob([userCode], {type: 'text/plain'});
             const link = document.createElement('a');
             link.href = window.URL.createObjectURL(blob);
             link.download = 'usercode.py';
             link.click();
         }
-
-
-
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const userCode = urlParams.get('userCode');
-        if (userCode) {
-            document.getElementById('usercode').value = userCode;
-        }
     </script>
 </head>
 <body>
 <h1>Code Editor</h1>
-<p>name = input("input") <br>
-    print(name)</p>
-<textarea id="usercode" placeholder="Enter your Python code here..." rows="5" cols="80"></textarea><br>
-
+<p>name = input("input") <br> print(name)</p>
+<textarea id="usercode" placeholder="Enter your Python code here..." rows="5" cols="80"
+          spellcheck="false"></textarea><br>
 <button id="runButton" onclick="runCode()">Run Code</button>
 <button id="runBandit" onclick="runBandit()">Run Bandit</button>
 <button id="downloadButton" onclick="downloadFile()">Download Code</button>
-<h2>Conversation</h2>
-<textarea id="conversation" readonly></textarea><br>
-
-<h2>User Input</h2>
-<textarea id="userinput" placeholder="Enter input to interact with the code..." rows="3" cols="80"></textarea><br>
-
-<button id="sendInputButton" onclick="sendInput()">Send Input</button>
-
-
+<div id="conversation-container">
+    <h2>Conversation</h2>
+    <div id="conversation"></div>
+    <h2>User Input</h2>
+    <textarea id="userinput" placeholder="Enter input to interact with the code..." rows="3" cols="80"></textarea><br>
+    <button id="sendInputButton" onclick="sendInput()">Send Input</button>
+</div>
 </body>
 </html>
