@@ -2,31 +2,29 @@ package com.example.PythonIDE_Testing;
 
 import java.util.ArrayList;
 
-
-//stores details for each "iteration" of the generation + regeneration phase.
 public class Iteration {
     private String code;
-    private ArrayList<Vulnerability> vulnerabilities;
+    private ArrayList<Issue> issues;
 
-    public Iteration(String code, ArrayList<Vulnerability> vulnerabilities) {
+    public Iteration(String code, ArrayList<Issue> issues) {
         this.code = code;
-        this.vulnerabilities = vulnerabilities;
+        this.issues = issues;
     }
 
     public String getCode() {
         return code;
     }
 
-    public ArrayList<Vulnerability> getVulnerabilities() {
-        return vulnerabilities;
+    public ArrayList<Issue> getIssues() {
+        return issues;
     }
 
     public void setCode(String code) {
         this.code = code;
     }
 
-    public void setVulnerabilities(ArrayList<Vulnerability> vulnerabilities) {
-        this.vulnerabilities = vulnerabilities;
+    public void setIssues(ArrayList<Issue> issues) {
+        this.issues = issues;
     }
 
 

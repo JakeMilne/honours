@@ -1,0 +1,4 @@
+enum APIType {
+    OpenAI,
+    Gemini,
+}

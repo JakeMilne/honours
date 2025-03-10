@@ -1,20 +1,25 @@
 package com.example.PythonIDE_Testing;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.ArrayList;
+
 import com.opencsv.CSVReader;
+
 import java.io.FileReader;
 import java.io.IOException;
+
 import com.opencsv.exceptions.CsvValidationException;
 import com.opencsv.CSVWriter;
+
 import java.io.FileWriter;
 
 //https://github.com/tuhh-softsec/LLMSecEval/
 
-public class Evaluation{
+public class Evaluation {
     //nD array containing prompt, how many vulnerabilities in the first iteration, how many vulnerabilities in the second iteration, third iteration
     private ArrayList<ArrayList<String>> evalData;
 
@@ -47,7 +52,7 @@ public class Evaluation{
 
                     for (int i = 0; i < 3; i++) {
                         if (i < iterations.size()) {
-                            int vulnerabilityCount = iterations.get(i).getVulnerabilities().size();
+                            int vulnerabilityCount = iterations.get(i).getIssues().size();
                             data[i + 1] = String.valueOf(vulnerabilityCount);
                         } else {
                             data[i + 1] = "0"; //
@@ -66,7 +71,7 @@ public class Evaluation{
     }
 
 
-    public static ArrayList<Iteration> getVulnerabilities(String prompt){
+    public static ArrayList<Iteration> getVulnerabilities(String prompt) {
         codeGenerator generator = new codeGenerator(prompt, new String[0], new String[0], new String[0], new String[0]);
         String callresponse = generator.callLM(prompt);
 
@@ -80,14 +85,13 @@ public class Evaluation{
 //        request.getSession().setAttribute("responseHandler", responseHandler);
 
 
-
         // runTests method deals with the dockerHandler object and its methods
         ArrayList<Iteration> iterations = runTests(generator, responseHandler, content);
 
-        for(Iteration iteration : iterations){
-            System.out.println(iteration.getVulnerabilities().size());
-            for(Vulnerability vulnerability : iteration.getVulnerabilities()){
-                System.out.println(vulnerability.toString());
+        for (Iteration iteration : iterations) {
+            System.out.println(iteration.getIssues().size());
+            for (Issue issue : iteration.getIssues()) {
+                System.out.println(issue.toString());
             }
         }
 
@@ -107,11 +111,11 @@ public class Evaluation{
 
         String filePath = "/tmp/script.py";
         docker.saveFile(content, filePath, true);
-        ArrayList<Vulnerability> vulnerabilities = docker.runBanditOnFile(filePath);
+        ArrayList<Issue> vulnerabilities = docker.runBanditOnFile(filePath);
         iterations.add(new Iteration(content, vulnerabilities));
         String newContent = "";
 
-        while(!vulnerabilities.isEmpty() && (generator.getIterationCount() <= generator.iterationCap)) {
+        while (!vulnerabilities.isEmpty() && (generator.getIterationCount() <= generator.iterationCap)) {
             generator.incrementIterationCount();
             newContent = generator.regenerateForVulnerability(content, vulnerabilities);
             String newCode = responseHandler.extractCode(newContent);
@@ -125,12 +129,7 @@ public class Evaluation{
         return iterations;
 
 
-
-
     }
-
-
-
 
 
 }

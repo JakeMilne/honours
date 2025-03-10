@@ -10,23 +10,25 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
+
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonWriter;
+
 import java.io.StringReader;
 import java.io.StringWriter;
+
 import org.springframework.web.socket.*;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
+
 import java.io.StringReader;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.IOException;
 import java.util.ArrayList;
-
-
 
 
 public class MyWebSocketHandler extends TextWebSocketHandler {
@@ -42,7 +44,6 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
         sessions.put(session.getId(), session);
 
 
-
     }
 
     @Override
@@ -55,20 +56,20 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
             runUserCode(userCode, session);
 //            sendMessageToUser(session, result);
         }
-        if("userInput".equals(type)){
+        if ("userInput".equals(type)) {
             String userInput = jsonMessage.getString("input");
             docker.addUserInput(userInput);
         }
 
-        if("runBandit".equals(type)){
+        if ("runBandit".equals(type)) {
             String userCode = jsonMessage.getString("code");
             docker.saveFile(userCode, "/tmp/usercode.py", false);
-            ArrayList<Vulnerability> vulnerabilities = docker.runBanditOnFile("/tmp/usercode.py");
+            ArrayList<Issue> vulnerabilities = docker.runBanditOnFile("/tmp/usercode.py");
             sendMessageToUser(session, "Bandit Results:");
-            if(vulnerabilities.size() == 0){
+            if (vulnerabilities.size() == 0) {
                 sendMessageToUser(session, "No vulnerabilities found");
-            }else{
-                for(Vulnerability vulnerability : vulnerabilities){
+            } else {
+                for (Issue vulnerability : vulnerabilities) {
 
                     sendMessageToUser(session, vulnerability.toString());
                 }
@@ -91,15 +92,13 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
 
     private void sendMessageToUser(WebSocketSession session, String message) {
 
-        try{
+        try {
 
-                TextMessage textMessage = new TextMessage(message);
-                session.sendMessage(textMessage);
-        } catch (IOException e){
-        e.printStackTrace();
-    }
-
-
+            TextMessage textMessage = new TextMessage(message);
+            session.sendMessage(textMessage);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
 
     }

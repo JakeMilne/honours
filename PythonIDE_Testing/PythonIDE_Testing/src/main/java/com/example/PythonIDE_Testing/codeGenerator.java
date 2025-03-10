@@ -1,14 +1,15 @@
 package com.example.PythonIDE_Testing;
 
 
-
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Map;
 import java.util.List;
+
 import com.google.gson.Gson;
+
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -16,9 +17,9 @@ public class codeGenerator {
 
     private String prompt;
     private String[] drafts;
-//    private String[] parameters;
+    //    private String[] parameters;
     private String parameters;
-//    private String[] exampleOutputs;
+    //    private String[] exampleOutputs;
     private String[] outputNames;
     private String[] outputValues;
     public int iterationCap = 3;
@@ -30,7 +31,8 @@ public class codeGenerator {
 //    private LLM llm = new LLM("http://localhost:1234/v1/chat/completions", "meta-llama-3.1-8b-instruct", false, "");
 //    private LLM llm = new LLM("https://api.openai.com/v1/chat/completions", "gpt-4o-mini", true, System.getenv("OPENAI_API_KEY"));
 
-    public codeGenerator() {}
+    public codeGenerator() {
+    }
 
     public codeGenerator(String prompt, String[] paramNames, String[] outputNames, String[] paramValues, String[] outputValues) {
         this.prompt = prompt;
@@ -40,10 +42,10 @@ public class codeGenerator {
         this.iterationCount = 0;
         this.paramNames = paramNames;
         this.paramValues = paramValues;
-        for(String string : paramNames){
+        for (String string : paramNames) {
             System.out.println("Param Name: " + string);
         }
-        for(String string : paramValues){
+        for (String string : paramValues) {
             System.out.println("Param Value: " + string);
         }
         this.llm = new LLM("https://api.openai.com/v1/chat/completions", "gpt-4o-mini", true, System.getenv("OPENAI_API_KEY"));
@@ -137,9 +139,8 @@ public class codeGenerator {
     }
 
     //regenerating code when theres a vulnerability
-    public String regenerateForVulnerability(String code, ArrayList<Vulnerability> vulnerabilities){
+    public String regenerateForVulnerability(String code, ArrayList<Issue> vulnerabilities) {
         try {
-
 
 
 //                String vulnerability = "";
@@ -172,19 +173,19 @@ public class codeGenerator {
 
             HttpRequest request = this.llm.buildVulnCall(vulnerabilities, code);
             System.out.println("Request: " + request);
-                HttpClient client = HttpClient.newBuilder()
-                        .version(HttpClient.Version.HTTP_1_1)
-                        .build();
+            HttpClient client = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .build();
 
-                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
 
-                if (response.statusCode() != 200) {
-                    return String.format("{\"error\": \"API responded with status code %d: %s\"}",
-                            response.statusCode(), response.body());
-                }
+            if (response.statusCode() != 200) {
+                return String.format("{\"error\": \"API responded with status code %d: %s\"}",
+                        response.statusCode(), response.body());
+            }
 
-                return response.body();
+            return response.body();
 
 
         } catch (IOException | InterruptedException e) {
@@ -193,11 +194,40 @@ public class codeGenerator {
         }
     }
 
+
+    public String regenerateForErrors(String code, String errors) {
+        try {
+
+            HttpRequest request = this.llm.buildErrorCall(errors, code);
+            System.out.println("Request: " + request);
+            HttpClient client = HttpClient.newBuilder()
+                    .version(HttpClient.Version.HTTP_1_1)
+                    .build();
+
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+
+            if (response.statusCode() != 200) {
+                return String.format("{\"error\": \"API responded with status code %d: %s\"}",
+                        response.statusCode(), response.body());
+            }
+
+            return response.body();
+
+
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            return "{\"error\": \"Failed to communicate with LLM service: " + e.getMessage() + "\"}";
+        }
+    }
+
+
     //iteraton count is used to cap how many times code can be regenerated
-    public void incrementIterationCount(){
+    public void incrementIterationCount() {
         this.iterationCount++;
     }
-    public int getIterationCount(){
+
+    public int getIterationCount() {
         return this.iterationCount;
     }
 

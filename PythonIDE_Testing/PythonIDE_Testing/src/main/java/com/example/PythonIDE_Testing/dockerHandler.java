@@ -23,12 +23,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.Queue;
 import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class dockerHandler {
 
     private ConcurrentLinkedQueue<String> inputQueue = new ConcurrentLinkedQueue<>();
     private boolean waitingForInput = false;
-    private String containerName = "pythonide_testing-app-1";
+    //    private String containerName = "pythonide_testing-app-1";
+    private String containerName = System.getenv("CONTAINER_NAME");
     private final Object webSocketLock = new Object();
 
 
@@ -92,8 +94,8 @@ public class dockerHandler {
 
 
     //method that calls bandit on the file
-    public ArrayList<Vulnerability> runBanditOnFile(String filepath) {
-        ArrayList<Vulnerability> vulnerabilities = new ArrayList<Vulnerability>();
+    public ArrayList<Issue> runBanditOnFile(String filepath) {
+        ArrayList<Issue> vulnerabilities = new ArrayList<Issue>();
 
         try {
             ProcessBuilder banditProcess = new ProcessBuilder(
@@ -368,7 +370,7 @@ public class dockerHandler {
                                 sendMessageToUser(session, " line 376 Sending input: " + input);
                                 writer.write(input + "\n");
                                 writer.flush();
-                                waitingForInput.set(false);  // Set the waiting flag to false
+                                waitingForInput.set(false);
                             }
                         } catch (IOException e) {
                             sendMessageToUser(session, "Input error: " + e.getMessage());
@@ -473,24 +475,26 @@ public class dockerHandler {
     private boolean checkPattern(String pattern, Queue<String> testCase) {
         StringBuilder concatenatedLines = new StringBuilder();
         for (String line : testCase) {
-            concatenatedLines.append(line);
+            concatenatedLines.append(line).append("\n");
 
         }
-//        System.out.println("Concatenated lines: " + concatenatedLines.toString());
-//        System.out.println("Pattern: " + pattern);
-//        System.out.println();
-//        System.out.println();
-//        System.out.println("Pattern");
-//        System.out.println(pattern);
-//        System.out.println();
-//        System.out.println("output");
-//        System.out.println(concatenatedLines);
+        System.out.println("Concatenated lines: " + concatenatedLines.toString());
+        System.out.println("Pattern: " + pattern);
+        System.out.println();
+        System.out.println();
+        System.out.println("Pattern");
+        System.out.println(pattern);
+        System.out.println();
+        System.out.println("output");
+        System.out.println(concatenatedLines);
         java.util.regex.Pattern regexPattern = java.util.regex.Pattern.compile(pattern);
         java.util.regex.Matcher matcher = regexPattern.matcher(concatenatedLines.toString());
 
         if (matcher.find()) {
             System.out.println("Pattern found! " + pattern);
             return true;
+        } else {
+            System.out.println("Pattern not found! " + pattern);
         }
         return false;
     }
@@ -736,7 +740,8 @@ public class dockerHandler {
 //                String testFailure = "----------------------------------------------------------------------Ran \\d+ test in \\d+\\.\\d+s FAILED \\(failures=\\d+\\)";
 //                String testFailure = "FAIL:\\s+(\\S+)\\s+\\(([^)]+)\\)\\s+[-]+\\s+Traceback \\(most recent call last\\):\\s+File\\s+\"([^\"]+)\",\\s+line\\s+(\\d+),\\s+in\\s+(\\S+)\\s+self\\.assertEqual\\(result,\\s*(\\d+)\\)\\s+AssertionError:\\s*(\\d+)\\s*!=\\s*(\\d+)";
                 String testFailure = "FAIL: ([^=]+).*?Traceback \\(most recent call last\\):.*?File \"([^\"]+)\", line (\\d+), in ([^A-Z]+).*?(AssertionError: .+?)------+Ran (\\d+) test.+?FAILED \\(failures=(\\d+)\\)";
-//                String testFailure = "(?m)^Server: FAIL: ([^\\n]+).*?Server: Traceback \\(most recent call last\\):.*?Server: File \"([^\"]+)\", line (\\d+), in ([^\\n]+).*?Server: (AssertionError: .+)$";
+
+                //                String testFailure = "(?m)^Server: FAIL: ([^\\n]+).*?Server: Traceback \\(most recent call last\\):.*?Server: File \"([^\"]+)\", line (\\d+), in ([^\\n]+).*?Server: (AssertionError: .+)$";
                 System.out.println("Running Python script: " + filePath);
                 ProcessBuilder scriptBuilder = new ProcessBuilder("docker", "exec", "-i", containerName, "python3", "-u", filePath);
                 //get code from filePath in the docker container
@@ -902,4 +907,179 @@ public class dockerHandler {
             }
         }).start();
     }
+
+
+    //need to change this so: if theres input requests it returns, if there arent it runs
+    public String runFileForRegenerating(String filePath, String code) {
+        AtomicReference<String> result = new AtomicReference<>("");
+        try {
+
+
+            System.out.println("INSIDE RUN FILE FOR REGENERATING");
+
+            inputQueue.clear();
+            AtomicBoolean waitingForInput = new AtomicBoolean(false);
+            Queue<String> testCase = new LinkedList<>();
+            String testSuccess = ".----------------------------------------------------------------------Ran \\d+ test in \\d+\\.\\d+sOK";
+//            String testFailure = "FAIL: ([^=]+).*?Traceback \\(most recent call last\\):.*?File \"([^\"]+)\", line (\\d+), in ([^A-Z]+).*?(AssertionError: .+?)------+Ran (\\d+) test.+?FAILED \\(failures=(\\d+)\\)";
+
+//            String testFailure = "FAIL: ([^=]+).*?Traceback \\(most recent call last\\):.*?File \\\"([^\"]+)\\\", line (\\d+), in ([^\\s]+).*?(AssertionError: .+?)\\-+\\nRan (\\d+) test.+?FAILED \\(failures=(\\d+)\\)";
+//            String testFailure = "FAIL: ([^=]+).*?Traceback \\(most recent call last\\):.*?File \\\"([^\"]+)\\\", line (\\d+), in ([^\\s]+).*?(AssertionError: .+?)-{5,}\\nRan (\\d+) test.+?FAILED \\(failures=(\\d+)\\)";
+            String testFailure = "F\\s*======================================================================\\s*" +
+                    "FAIL: (\\w+) \\(([\\w.]+)\\)\\s*" +
+                    "----------------------------------------------------------------------\\s*" +
+                    "Traceback \\(most recent call last\\):\\s*" +
+                    "  File \"([^\"]+)\", line (\\d+), in (\\w+)\\s*" +
+                    "    (.*?)\\s*" +
+                    "AssertionError: (\\d+) != (\\d+)\\s*" +
+                    "----------------------------------------------------------------------\\s*" +
+                    "Ran (\\d+) test in ([\\d.]+)s\\s*" +
+                    "FAILED \\(failures=(\\d+)\\)";
+
+            ProcessBuilder scriptBuilder = new ProcessBuilder("docker", "exec", "-i", containerName, "python3", "-u", filePath);
+            scriptBuilder.redirectErrorStream(true);
+            Process process = scriptBuilder.start();
+
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(process.getOutputStream()));
+            BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+
+            BufferedReader codeReader = new BufferedReader(new StringReader(code));
+            ArrayList<Function> functionCalls = new ArrayList<>();
+            ArrayList<Inputs> inputList = new ArrayList<>();
+
+            PythonChunk rootChunk = new PythonChunk(code, "root", null).parse(code);
+            ArrayList<PythonChunk> chunks = new ArrayList<>();
+            chunks.add(rootChunk);
+            chunks = getAllChunks(chunks);
+
+            if (chunks.isEmpty()) {
+                chunks.add(rootChunk);
+            }
+
+            String line;
+            while ((line = codeReader.readLine()) != null) {
+                if (!getFunctionCall(line).equals("false")) {
+                    PythonChunk functionChunk = findChunk(line, rootChunk);
+                    functionCalls.add(new Function(getFunctionCall(line), functionChunk));
+                }
+            }
+
+            for (PythonChunk chunk : chunks) {
+                for (String input : chunk.getInputs()) {
+                    if (chunk.getParent() == null) {
+                        inputList.add(new Inputs(input, true));
+                    } else {
+                        inputList.add(new Inputs(input, false));
+                    }
+                }
+            }
+
+            if (!inputList.isEmpty()) {
+                result.set("unable to run tests, input requests detected");
+                return result.get();
+            }
+
+            Thread outputThread = new Thread(() -> {
+                try {
+                    System.out.println("In output thread");
+                    int c;
+                    StringBuilder lineBuffer = new StringBuilder();
+                    while ((c = reader.read()) != -1) {
+                        char ch = (char) c;
+                        lineBuffer.append(ch);
+
+                        if (ch == '\n') {
+                            if (testCase.size() == 15) {
+                                testCase.poll();
+                            }
+                            testCase.offer(lineBuffer.toString());
+                            System.out.println(testCase.toString());
+
+                            if (checkPattern(testFailure, testCase)) {
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                System.out.println("Test failure");
+                                if (result.get().contains("FAIL")) {
+                                    result.set(result.get() + " SPLIT THE ERROR HERE " + testCase.toString());
+                                } else {
+                                    result.set("FAIL " + testCase.toString());
+                                }
+//
+                            } else {
+                                System.out.println("Test success");
+                            }
+
+                            lineBuffer.setLength(0);
+                        }
+                    }
+                } catch (Exception e) {
+                }
+            });
+
+            Thread errorThread = new Thread(() -> {
+                try {
+                    String errorLine;
+                    while ((errorLine = errorReader.readLine()) != null) {
+                        if (!errorLine.trim().isEmpty()) {
+                        }
+                    }
+                } catch (IOException e) {
+                }
+            });
+
+            result.set("Success");
+            outputThread.start();
+            errorThread.start();
+
+            try {
+                outputThread.join();
+                errorThread.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return "Error: Thread was interrupted";
+            }
+
+            while (process.isAlive()) {
+                if (waitingForInput.get() && !inputQueue.isEmpty()) {
+                    try {
+                        String input = inputQueue.poll();
+                        if (input != null) {
+                            writer.write(input + "\n");
+                            writer.flush();
+                            waitingForInput.set(false);
+                        }
+                    } catch (IOException e) {
+                    }
+                }
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    break;
+                }
+            }
+
+        } catch (IOException e) {
+            return "Error: " + e.getMessage();
+        }
+        System.out.println("Result: " + result.get());
+        return result.get();
+    }
+
 }
