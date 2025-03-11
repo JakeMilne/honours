@@ -28,3 +28,7 @@ from kyle -
 parse python into chunks - ie by function using indents
 make frontend more nice
 add more llms - maybe another language
+
+
+
+on iteration cap reached, dosnt show all vulnerabilites by default, does when user goes previous then next though.

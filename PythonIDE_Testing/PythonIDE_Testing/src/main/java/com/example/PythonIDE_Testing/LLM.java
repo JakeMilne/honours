@@ -78,7 +78,9 @@ public class LLM {
         System.out.println(generator.getParamNames().length);
         System.out.println(generator.getOutputNames().length);
 
-        if ((generator.getParamNames().length == 1) && (generator.getOutputNames().length == 1) && (((generator.getParamValues() != null && generator.getParamValues().length > 0) ? generator.getParamValues()[0] : null) == "") && (((generator.getOutputValues() != null && generator.getOutputValues().length > 0) ? generator.getOutputValues()[0] : null) == "")) {
+        if ((generator.getParamValues().length == 0 || (generator.getParamValues().length == 1 && generator.getParamValues()[0].isBlank())) && (generator.getOutputValues().length == 0 || (generator.getOutputValues().length == 1 && generator.getOutputValues()[0].isBlank()))) {
+
+
             System.out.println("no params or outputs");
             Map<String, Object> requestBody = Map.of(
                     "model", this.model,

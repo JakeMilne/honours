@@ -39,13 +39,18 @@ public class dockerHandler {
 
     public void saveFile(String pythonCode, String filePath, boolean strip) {
         System.out.println("Saving Python code to the container at: " + filePath);
+        System.out.println("============= Python code start =============");
+        System.out.println(pythonCode);
+        System.out.println("============= Python code end =============");
+        System.out.println(strip);
 
         String strippedPythonCode = "";
         if (strip) {
-
+            System.out.println("Stripping HTML tags");
             strippedPythonCode = stripHtmlTags(pythonCode);
-//            System.out.println(strippedPythonCode);
+//            System.out.printl n(strippedPythonCode);
         } else {
+            System.out.println("Not stripping HTML tags");
             strippedPythonCode = pythonCode;
 //            System.out.println(strippedPythonCode);
         }
@@ -53,7 +58,7 @@ public class dockerHandler {
 
 //        String containerName = "pythonide_testing-app-1";
 
-
+        System.out.println("Stripped Python code: " + strippedPythonCode);
         try {
             String[] command = {
                     "docker", "exec", "-i", containerName, "sh", "-c", "cat > " + filePath
@@ -96,7 +101,7 @@ public class dockerHandler {
     //method that calls bandit on the file
     public ArrayList<Issue> runBanditOnFile(String filepath) {
         ArrayList<Issue> vulnerabilities = new ArrayList<Issue>();
-
+        System.out.println("Running Bandit on file: " + filepath);
         try {
             ProcessBuilder banditProcess = new ProcessBuilder(
                     "docker", "exec", "-i", containerName,
@@ -115,7 +120,7 @@ public class dockerHandler {
             String vulnerability = "";
             int i = 1;
             while ((line = reader.readLine()) != null) {
-
+                System.out.println(line);
 
                 if (line.contains("Issue: [")) {
 

@@ -72,7 +72,13 @@ public class MyServlet extends HttpServlet {
 
 
         // showing the users input, was/is used for testing
+//        writer.println("<h1>Prompt: " + userprompt + "</h1>");
+
+        writer.println("<div class=\"prompt-section\">");
         writer.println("<h1>Prompt: " + userprompt + "</h1>");
+        writer.println("</div>");
+
+
 //        writer.println("<h1>parameters: " + allParamNames + "</h1>");
 //        writer.println("<h1>parameter values: " + allParamValues + "</h1>");
         String valuesCat = "";
@@ -114,17 +120,62 @@ public class MyServlet extends HttpServlet {
 
         // runTests method deals with the dockerHandler object and its methods
 
-        if ((outputValues.length > 0 && outputValues[0] != null) || (paramValues.length > 0 && paramValues[0] != null)) {
+        if ((outputValues.length > 0 && outputValues[0] != "") || (paramValues.length > 0 && paramValues[0] != "")) {
+
+            System.out.println("Running tests with units");
             runTestsWithUnits(generator, responseHandler, content, response, writer, request);
         } else {
+            System.out.println("Running tests");
             runTests(generator, responseHandler, content, response, writer, request);
         }
         // some stuff to display the different iterations of the code
         int index = iterations.size() - 1;
         System.out.println("Iterations size: " + iterations.size());
 
-        writer.println("<h2>Iteration " + (index + 1) + "</h2>");
 
+        if (iterations.get(index).getIssues().size() > 0) {
+            Boolean hasVulnerabilities = false;
+            //for loop to check if issues contains any vulnerabilities, then i can start showing them
+            for (Issue issue : iterations.get(index).getIssues()) {
+                if (issue instanceof Vulnerability) {
+                    hasVulnerabilities = true;
+                }
+            }
+//            if (hasVulnerabilities) {
+//
+//                writer.println("<h1>Vulnerabilities Detected:</h1>");
+//                writer.println("<ul>");
+//                for (Issue issue : iterations.get(index).getIssues()) {
+//                    if (issue instanceof Vulnerability) {
+//                        writer.println("<li>" + ((Vulnerability) issue).toStringWithHLink() + "</li>");
+//
+//                    }
+//                }
+//                writer.println("</ul>");
+//            } else {
+//                writer.println("<h1>No Vulnerabilities Detected</h1>");
+//
+//            }
+
+            if (hasVulnerabilities) {
+                writer.println("<div class=\"vulnerability-section\">");
+                writer.println("<h1>Vulnerabilities Detected:</h1>");
+                writer.println("<ul>");
+                for (Issue issue : iterations.get(index).getIssues()) {
+                    if (issue instanceof Vulnerability) {
+                        writer.println("<li>" + ((Vulnerability) issue).toStringWithHLink() + "</li>");
+                    }
+                }
+                writer.println("</ul>");
+                writer.println("</div>");
+            } else {
+                writer.println("<div class=\"no-vulnerability-section\">");
+                writer.println("<h1>No Vulnerabilities Detected</h1>");
+                writer.println("</div>");
+            }
+
+
+        }
 
         // getting rid of pesky html tags
         String code = iterations.get(index).getCode().replace("<br>", "\n").replace("<pre>", "").replace("</pre>", "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;");
@@ -158,12 +209,24 @@ public class MyServlet extends HttpServlet {
 //                "    </script>");
 
 
+        writer.println("<h2>Iteration " + (index + 1) + "</h2>");
+
+//        if (index > 0) {
+//            writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous iteration</a> ");
+//        }
+//        if (index < iterations.size() - 1) {
+//            writer.println("<a href='/MyServlet?index=" + (index + 1) + "'>Next iteration</a>");
+//        }
+
+
+        writer.println("<div class=\"nav-links\">");
         if (index > 0) {
-            writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous iteration</a> ");
+            writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous iteration</a>");
         }
         if (index < iterations.size() - 1) {
             writer.println("<a href='/MyServlet?index=" + (index + 1) + "'>Next iteration</a>");
         }
+        writer.println("</div>");
 
         writer.close();
     }
@@ -174,8 +237,8 @@ public class MyServlet extends HttpServlet {
         int index = (indexParam != null) ? Integer.parseInt(indexParam) : iterations.size() - 1;
 
         String userprompt = request.getParameter("userprompt");
-        String parameter = request.getParameter("parameters");
-        String exampleOutputs = request.getParameter("exampleOutputs");
+//        String parameter = request.getParameter("parameters");
+//        String exampleOutputs = request.getParameter("exampleOutputs");
 
         //showing stuff to the user
         response.setContentType("text/html");
@@ -193,9 +256,15 @@ public class MyServlet extends HttpServlet {
         writer.println("</head>");
 
 
+//        writer.println("<h1>Prompt: " + userprompt + "</h1>");
+
+        writer.println("<div class=\"prompt-section\">");
         writer.println("<h1>Prompt: " + userprompt + "</h1>");
-        writer.println("<h1>Parameters: " + parameter + "</h1>");
-        writer.println("<h1>Example output(s): " + exampleOutputs + "</h1>");
+        writer.println("</div>");
+
+
+//        writer.println("<h1>Parameters: " + parameter + "</h1>");
+//        writer.println("<h1>Example output(s): " + exampleOutputs + "</h1>");
         if (iterations.get(index).getIssues().size() > 0) {
             Boolean hasVulnerabilities = false;
             //for loop to check if issues contains any vulnerabilities, then i can start showing them
@@ -204,20 +273,37 @@ public class MyServlet extends HttpServlet {
                     hasVulnerabilities = true;
                 }
             }
-            if (hasVulnerabilities) {
+//            if (hasVulnerabilities) {
+//
+//                writer.println("<h1>Vulnerabilities Detected:</h1>");
+//                writer.println("<ul>");
+//                for (Issue issue : iterations.get(index).getIssues()) {
+//                    if (issue instanceof Vulnerability) {
+//                        writer.println("<li>" + ((Vulnerability) issue).toStringWithHLink() + "</li>");
+//
+//                    }
+//                }
+//                writer.println("</ul>");
+//            } else {
+//                writer.println("<h1>No Vulnerabilities Detected</h1>");
+//
+//            }
 
+            if (hasVulnerabilities) {
+                writer.println("<div class=\"vulnerability-section\">");
                 writer.println("<h1>Vulnerabilities Detected:</h1>");
                 writer.println("<ul>");
                 for (Issue issue : iterations.get(index).getIssues()) {
                     if (issue instanceof Vulnerability) {
                         writer.println("<li>" + ((Vulnerability) issue).toStringWithHLink() + "</li>");
-
                     }
                 }
                 writer.println("</ul>");
+                writer.println("</div>");
             } else {
+                writer.println("<div class=\"no-vulnerability-section\">");
                 writer.println("<h1>No Vulnerabilities Detected</h1>");
-
+                writer.println("</div>");
             }
 
 
@@ -231,12 +317,22 @@ public class MyServlet extends HttpServlet {
         generateForm(code, writer, iterations.get(index).getIssues());
 //        writer.println(iterations.get(index).getCode());
 
+//        if (index > 0) {
+//            writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous</a> ");
+//        }
+//        if (index < iterations.size() - 1) {
+//            writer.println("<a href='/MyServlet?index=" + (index + 1) + "'>Next</a>");
+//        }
+
+
+        writer.println("<div class=\"nav-links\">");
         if (index > 0) {
-            writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous</a> ");
+            writer.println("<a href='/MyServlet?index=" + (index - 1) + "'>Previous iteration</a>");
         }
         if (index < iterations.size() - 1) {
-            writer.println("<a href='/MyServlet?index=" + (index + 1) + "'>Next</a>");
+            writer.println("<a href='/MyServlet?index=" + (index + 1) + "'>Next iteration</a>");
         }
+        writer.println("</div>");
 
         writer.close();
     }
@@ -259,20 +355,34 @@ public class MyServlet extends HttpServlet {
         ArrayList<Issue> vulnerabilities = docker.runBanditOnFile(filePath);
         iterations.add(new Iteration(content, vulnerabilities));
         String newContent = "";
+        System.out.println(generator.getIterationCount());
+        System.out.println(generator.iterationCap);
+        while (!vulnerabilities.isEmpty() && (generator.getIterationCount() < generator.iterationCap)) {
 
-        while (!vulnerabilities.isEmpty() && (generator.getIterationCount() <= generator.iterationCap)) {
+            System.out.println("About to increment iteration count");
+            System.out.println(generator.getIterationCount());
+            System.out.println(generator.iterationCap);
+
             generator.incrementIterationCount();
+
+            System.out.println("After incrementing iteration count");
+            System.out.println(generator.getIterationCount());
+            System.out.println(generator.iterationCap);
+
+
             newContent = generator.regenerateForVulnerability(content, vulnerabilities);
             String newCode = responseHandler.extractCode(newContent);
             filePath = "/tmp/script" + generator.getIterationCount() + ".py";
-            docker.saveFile(newCode, filePath, true);
+            System.out.println("New code: " + newCode);
+            System.out.println("ABOUT TO SAVE FILE");
+            docker.saveFile(newCode, filePath, false);
             vulnerabilities = docker.runBanditOnFile(filePath);
             newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
             iterations.add(new Iteration(newCode, vulnerabilities));
         }
 
 
-        if (generator.getIterationCount() > generator.iterationCap) {
+        if (generator.getIterationCount() == generator.iterationCap) {
             writer.println("<h1>Iteration cap reached</h1>");
         }
 
@@ -296,12 +406,12 @@ public class MyServlet extends HttpServlet {
         iterations.add(new Iteration(content, vulnerabilities));
         String newContent = "";
 
-        while (!vulnerabilities.isEmpty() && (generator.getIterationCount() <= generator.iterationCap)) {
+        while (!vulnerabilities.isEmpty() && (generator.getIterationCount() < generator.iterationCap)) {
             generator.incrementIterationCount();
             newContent = generator.regenerateForVulnerability(content, vulnerabilities);
             String newCode = responseHandler.extractCode(newContent);
             filePath = "/tmp/script" + generator.getIterationCount() + ".py";
-            docker.saveFile(newCode, filePath, true);
+            docker.saveFile(newCode, filePath, false);
             vulnerabilities = docker.runBanditOnFile(filePath);
             newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
             iterations.add(new Iteration(newCode, vulnerabilities));
@@ -383,11 +493,13 @@ public class MyServlet extends HttpServlet {
 
 
         writer.println("<form action=\"/userIDE\" method=\"POST\">");
+        writer.println("<h1>Code:</h1>");
         writer.println("<div class=\"editor-container\">");
         writer.println("  <pre class=\"line-numbers\" id=\"lineNumbers\"></pre>");
         writer.println("  <textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\" class=\"editor\" oninput=\"updateLines()\">" + code + "</textarea>");
         writer.println("</div>");
-        writer.println("<input type=\"submit\" value=\"Check\">");
+//        writer.println("<input type=\"submit\" value=\"Check\">");
+        writer.println("<button type=\"submit\">Check</button>");
         //button that lets user download file
         writer.println("<button type=\"button\" onclick=\"downloadFile()\">Download</button>");
         writer.println("</form>");

@@ -115,12 +115,12 @@ public class Evaluation {
         iterations.add(new Iteration(content, vulnerabilities));
         String newContent = "";
 
-        while (!vulnerabilities.isEmpty() && (generator.getIterationCount() <= generator.iterationCap)) {
+        while (!vulnerabilities.isEmpty() && (generator.getIterationCount() < generator.iterationCap)) {
             generator.incrementIterationCount();
             newContent = generator.regenerateForVulnerability(content, vulnerabilities);
             String newCode = responseHandler.extractCode(newContent);
             filePath = "/tmp/script" + generator.getIterationCount() + ".py";
-            docker.saveFile(newCode, filePath, true);
+            docker.saveFile(newCode, filePath, false);
             vulnerabilities = docker.runBanditOnFile(filePath);
             newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
             iterations.add(new Iteration(newCode, vulnerabilities));

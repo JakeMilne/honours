@@ -23,7 +23,7 @@ public class codeGenerator {
     private String[] outputNames;
     private String[] outputValues;
     public int iterationCap = 3;
-    private int iterationCount = 0;
+    private int iterationCount = 1;
     private String[][] issues;
     private LLM llm;
     private String[] paramNames;
@@ -39,7 +39,7 @@ public class codeGenerator {
         this.parameters = "";
         this.outputNames = outputNames;
         this.outputValues = outputValues;
-        this.iterationCount = 0;
+//        this.iterationCount = 1;
         this.paramNames = paramNames;
         this.paramValues = paramValues;
         for (String string : paramNames) {
