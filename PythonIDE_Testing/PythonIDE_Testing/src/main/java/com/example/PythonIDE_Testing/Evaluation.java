@@ -20,7 +20,6 @@ import java.io.FileWriter;
 //https://github.com/tuhh-softsec/LLMSecEval/
 
 public class Evaluation {
-    //nD array containing prompt, how many vulnerabilities in the first iteration, how many vulnerabilities in the second iteration, third iteration
     private ArrayList<ArrayList<String>> evalData;
 
     private ArrayList<String> prompts;
