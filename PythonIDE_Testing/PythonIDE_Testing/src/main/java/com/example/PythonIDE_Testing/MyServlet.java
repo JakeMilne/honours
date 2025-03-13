@@ -359,18 +359,19 @@ public class MyServlet extends HttpServlet {
         System.out.println(generator.iterationCap);
         while (!vulnerabilities.isEmpty() && (generator.getIterationCount() < generator.iterationCap)) {
 
-            System.out.println("About to increment iteration count");
-            System.out.println(generator.getIterationCount());
-            System.out.println(generator.iterationCap);
 
             generator.incrementIterationCount();
 
-            System.out.println("After incrementing iteration count");
-            System.out.println(generator.getIterationCount());
-            System.out.println(generator.iterationCap);
+            ArrayList<Issue> allVulnerabilities = new ArrayList<>();
+            for (int i = 0; i < iterations.size(); i++) {
+                allVulnerabilities.addAll(iterations.get(i).getIssues());
+            }
 
-
-            newContent = generator.regenerateForVulnerability(content, vulnerabilities);
+            System.out.println("All vulnerabilities: ");
+            for (Issue issue : allVulnerabilities) {
+                System.out.println(issue.toString());
+            }
+            newContent = generator.regenerateForVulnerability(content, allVulnerabilities, (generator.getIterationCount() < 3));
             String newCode = responseHandler.extractCode(newContent);
             filePath = "/tmp/script" + generator.getIterationCount() + ".py";
             System.out.println("New code: " + newCode);
@@ -408,7 +409,14 @@ public class MyServlet extends HttpServlet {
 
         while (!vulnerabilities.isEmpty() && (generator.getIterationCount() < generator.iterationCap)) {
             generator.incrementIterationCount();
-            newContent = generator.regenerateForVulnerability(content, vulnerabilities);
+
+
+            ArrayList<Issue> allVulnerabilities = new ArrayList<>();
+            for (int i = 0; i < iterations.size(); i++) {
+                allVulnerabilities.addAll(iterations.get(i).getIssues());
+            }
+            newContent = generator.regenerateForVulnerability(content, allVulnerabilities, (generator.getIterationCount() < 3));
+//            newContent = generator.regenerateForVulnerability(content, vulnerabilities, (generator.getIterationCount() < 3));
             String newCode = responseHandler.extractCode(newContent);
             filePath = "/tmp/script" + generator.getIterationCount() + ".py";
             docker.saveFile(newCode, filePath, false);
@@ -421,7 +429,7 @@ public class MyServlet extends HttpServlet {
         while (result.contains("FAIL") && (generator.getIterationCount() <= generator.iterationCap)) {
             System.out.println("Regenerating for errors");
             generator.incrementIterationCount();
-            newContent = generator.regenerateForErrors(content, result);
+            newContent = generator.regenerateForErrors(content, result, (generator.getIterationCount() < 3));
             String newCode = responseHandler.extractCode(newContent);
 
             filePath = "/tmp/script" + generator.getIterationCount() + ".py";
@@ -471,13 +479,17 @@ public class MyServlet extends HttpServlet {
         writer.println("    margin: 0;");
         writer.println("    border: 1px solid #ccc;");
         writer.println("    resize: none;");
+        writer.println("    width: 100%;");
+        writer.println("    min-height: 600px;");
+        writer.println("    white-space: pre-wrap;");
+        writer.println("    overflow: auto;");
         writer.println("  }");
         writer.println("  .highlight {");
         writer.println("    background-color: yellow;");
         writer.println("  }");
-
-
         writer.println("</style>");
+
+
         //download file function
 
         writer.println("<script>");

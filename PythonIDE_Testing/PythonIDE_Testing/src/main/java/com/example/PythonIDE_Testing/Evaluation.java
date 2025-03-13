@@ -117,6 +117,9 @@ public class Evaluation {
 
         while (!vulnerabilities.isEmpty() && (generator.getIterationCount() < generator.iterationCap)) {
             generator.incrementIterationCount();
+
+            newContent = generator.regenerateForVulnerability(content, vulnerabilities, (generator.getIterationCount() == 1));
+
             newContent = generator.regenerateForVulnerability(content, vulnerabilities);
             String newCode = responseHandler.extractCode(newContent);
             filePath = "/tmp/script" + generator.getIterationCount() + ".py";

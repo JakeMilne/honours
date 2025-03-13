@@ -19,7 +19,6 @@ public class PythonIdeTestingApplication {
 
 //        Evaluation.eval();
 
-
 //		String code = "import unittest\n" +
 //				"\n" +
 //				"class Calculator:\n" +

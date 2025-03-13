@@ -26,6 +26,7 @@ public class codeGenerator {
     private int iterationCount = 1;
     private String[][] issues;
     private LLM llm;
+    private LLM deepseekLlm;
     private String[] paramNames;
     private String[] paramValues;
 //    private LLM llm = new LLM("http://localhost:1234/v1/chat/completions", "meta-llama-3.1-8b-instruct", false, "");
@@ -49,7 +50,7 @@ public class codeGenerator {
             System.out.println("Param Value: " + string);
         }
         this.llm = new LLM("https://api.openai.com/v1/chat/completions", "gpt-4o-mini", true, System.getenv("OPENAI_API_KEY"));
-
+        this.deepseekLlm = new LLM("https://api.deepseek.com/chat/completions", "deepseek-reasoner", true, System.getenv("DEEPSEEK_API_KEY"));
 
     }
 
@@ -123,7 +124,7 @@ public class codeGenerator {
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
 
 //            System.out.println("Response Status Code: " + response.statusCode());
-//            System.out.println("Response Body: " + response.body());
+            System.out.println("Response Body: " + response.body());
 
             if (response.statusCode() != 200) {
                 return String.format("{\"error\": \"API responded with status code %d: %s\"}",
@@ -139,7 +140,7 @@ public class codeGenerator {
     }
 
     //regenerating code when theres a vulnerability
-    public String regenerateForVulnerability(String code, ArrayList<Issue> vulnerabilities) {
+    public String regenerateForVulnerability(String code, ArrayList<Issue> vulnerabilities, boolean OpenAI) {
         try {
 
 
@@ -168,17 +169,21 @@ public class codeGenerator {
 //                        .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
 //                        .build();
 
-            System.out.println("LLM instance: " + this.llm);
-
-
             HttpRequest request = this.llm.buildVulnCall(vulnerabilities, code);
+            if (!OpenAI) {
+
+                System.out.println("Deepseek LLM instance: " + this.deepseekLlm);
+                request = this.deepseekLlm.buildVulnCall(vulnerabilities, code);
+
+
+            }
             System.out.println("Request: " + request);
             HttpClient client = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
                     .build();
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
+            System.out.println(response);
 
             if (response.statusCode() != 200) {
                 return String.format("{\"error\": \"API responded with status code %d: %s\"}",
@@ -195,10 +200,14 @@ public class codeGenerator {
     }
 
 
-    public String regenerateForErrors(String code, String errors) {
+    public String regenerateForErrors(String code, String errors, boolean OpenAI) {
         try {
 
             HttpRequest request = this.llm.buildErrorCall(errors, code);
+            if (!OpenAI) {
+                request = this.deepseekLlm.buildErrorCall(errors, code);
+            }
+//            HttpRequest request = this.llm.buildErrorCall(errors, code);
             System.out.println("Request: " + request);
             HttpClient client = HttpClient.newBuilder()
                     .version(HttpClient.Version.HTTP_1_1)
