@@ -458,7 +458,6 @@ public class MyServlet extends HttpServlet {
                     System.out.println(highlightedLines.toString());
                 }
             }
-
         }
 
         writer.println("<style>");
@@ -479,13 +478,11 @@ public class MyServlet extends HttpServlet {
         writer.println("    margin: 0;");
         writer.println("    border: 1px solid #ccc;");
         writer.println("    resize: none;");
-        writer.println("    width: 100%;");
-        writer.println("    min-height: 600px;");
-        writer.println("    white-space: pre-wrap;");
-        writer.println("    overflow: auto;");
+        writer.println("    overflow: hidden;");
         writer.println("  }");
         writer.println("  .highlight {");
         writer.println("    background-color: yellow;");
+        writer.println("    color: black;");
         writer.println("  }");
         writer.println("</style>");
 
@@ -501,28 +498,33 @@ public class MyServlet extends HttpServlet {
         writer.println("link.download = 'usercode.py';");
         writer.println("link.click();");
         writer.println("}");
-        writer.println("</script>");
 
+        writer.println("function adjustHeight(textarea) {");
+        writer.println("  textarea.style.height = 'auto';");
+        writer.println("  textarea.style.height = textarea.scrollHeight + 'px';");
+        writer.println("}");
+
+        writer.println("document.addEventListener('DOMContentLoaded', function() {");
+        writer.println("  let textarea = document.getElementById('usercode');");
+        writer.println("  if (textarea) { adjustHeight(textarea); }");
+        writer.println("});");
+        writer.println("</script>");
 
         writer.println("<form action=\"/userIDE\" method=\"POST\">");
         writer.println("<h1>Code:</h1>");
         writer.println("<div class=\"editor-container\">");
         writer.println("  <pre class=\"line-numbers\" id=\"lineNumbers\"></pre>");
-        writer.println("  <textarea id=\"usercode\" name=\"usercode\" rows=\"20\" cols=\"80\" class=\"editor\" oninput=\"updateLines()\">" + code + "</textarea>");
+        writer.println("  <textarea id=\"usercode\" name=\"usercode\" class=\"editor\" oninput=\"updateLines(); adjustHeight(this);\">" + code + "</textarea>");
         writer.println("</div>");
-//        writer.println("<input type=\"submit\" value=\"Check\">");
         writer.println("<button type=\"submit\">Check</button>");
-        //button that lets user download file
         writer.println("<button type=\"button\" onclick=\"downloadFile()\">Download</button>");
         writer.println("</form>");
 
         writer.println("<script>");
-        writer.println("  function updateLines(highlightedLines) {");
-        writer.println("    let textarea = document.getElementById(\"usercode\");");
+        writer.println("  function updateLines() {");
+        writer.println("    let textarea = document.getElementById('usercode');");
         writer.println("    let lines = textarea.value.split(\"\\n\").length;");
         writer.println("    let lineNumberArea = document.getElementById(\"lineNumbers\");");
-        writer.println("    ");
-        writer.println("    // Clear and recreate line numbers");
         writer.println("    lineNumberArea.innerHTML = ''; ");
         writer.println("    for (let i = 0; i < lines; i++) {");
         writer.println("      let lineDiv = document.createElement('div');");
@@ -530,8 +532,6 @@ public class MyServlet extends HttpServlet {
         writer.println("      lineDiv.textContent = i + 1;");
         writer.println("      lineNumberArea.appendChild(lineDiv);");
         writer.println("    }");
-        writer.println("    ");
-        writer.println("    // Highlight specified lines");
         writer.println("    highlightedLines.forEach(line => {");
         writer.println("      let lineElement = document.getElementById('line-' + line);");
         writer.println("      if (lineElement) {");
@@ -540,11 +540,13 @@ public class MyServlet extends HttpServlet {
         writer.println("    });");
         writer.println("  }");
         writer.println("  const highlightedLines = " + highlightedLines.toString() + ";");
-        writer.println("  updateLines(highlightedLines);");
+        writer.println("  updateLines();");
         writer.println("</script>");
-
-
     }
+
+
+
+
 
     public List<Integer> lineNumbers(String snippet) {
         Pattern pattern = Pattern.compile("(?m)^\\d+");
