@@ -415,6 +415,12 @@ public class MyServlet extends HttpServlet {
             for (int i = 0; i < iterations.size(); i++) {
                 allVulnerabilities.addAll(iterations.get(i).getIssues());
             }
+
+            System.out.println("All vulnerabilities: ");
+
+            for (Issue issue : allVulnerabilities) {
+                System.out.println(issue.toString());
+            }
             newContent = generator.regenerateForVulnerability(content, allVulnerabilities, (generator.getIterationCount() < 3));
 //            newContent = generator.regenerateForVulnerability(content, vulnerabilities, (generator.getIterationCount() < 3));
             String newCode = responseHandler.extractCode(newContent);
@@ -543,9 +549,6 @@ public class MyServlet extends HttpServlet {
         writer.println("  updateLines();");
         writer.println("</script>");
     }
-
-
-
 
 
     public List<Integer> lineNumbers(String snippet) {

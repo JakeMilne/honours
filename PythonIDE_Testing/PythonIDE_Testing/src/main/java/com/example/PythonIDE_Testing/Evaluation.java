@@ -119,7 +119,7 @@ public class Evaluation {
 
             newContent = generator.regenerateForVulnerability(content, vulnerabilities, (generator.getIterationCount() == 1));
 
-            newContent = generator.regenerateForVulnerability(content, vulnerabilities);
+//            newContent = generator.regenerateForVulnerability(content, vulnerabilities);
             String newCode = responseHandler.extractCode(newContent);
             filePath = "/tmp/script" + generator.getIterationCount() + ".py";
             docker.saveFile(newCode, filePath, false);
