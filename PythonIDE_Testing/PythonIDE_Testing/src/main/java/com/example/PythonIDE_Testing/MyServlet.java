@@ -129,7 +129,9 @@ public class MyServlet extends HttpServlet {
             runTests(generator, responseHandler, content, response, writer, request);
         }
         // some stuff to display the different iterations of the code
-        int index = iterations.size() - 1;
+//        int index = iterations.size() - 1;
+        int index = getLeastVulnerableIteration();
+
         System.out.println("Iterations size: " + iterations.size());
 
 
@@ -234,7 +236,17 @@ public class MyServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String indexParam = request.getParameter("index");
-        int index = (indexParam != null) ? Integer.parseInt(indexParam) : iterations.size() - 1;
+//        int index = (indexParam != null) ? Integer.parseInt(indexParam) : iterations.size() - 1;
+        int index = (indexParam != null) ? Integer.parseInt(indexParam) : getLeastVulnerableIteration();
+        int p = 0;
+        for (Iteration iteration : iterations) {
+            p++;
+            System.out.println("Iteration: " + p);
+            System.out.println("Iteration: " + iteration.getCode());
+            for (Issue issue : iteration.getIssues()) {
+                System.out.println("Issue: " + issue.toString());
+            }
+        }
 
         String userprompt = request.getParameter("userprompt");
 //        String parameter = request.getParameter("parameters");
@@ -362,16 +374,21 @@ public class MyServlet extends HttpServlet {
 
             generator.incrementIterationCount();
 
-            ArrayList<Issue> allVulnerabilities = new ArrayList<>();
-            for (int i = 0; i < iterations.size(); i++) {
-                allVulnerabilities.addAll(iterations.get(i).getIssues());
-            }
+//            ArrayList<Issue> allVulnerabilities = new ArrayList<>();
+//            for (int i = 0; i < iterations.size(); i++) {
+//                allVulnerabilities.addAll(iterations.get(i).getIssues());
+//            }
 
-            System.out.println("All vulnerabilities: ");
-            for (Issue issue : allVulnerabilities) {
-                System.out.println(issue.toString());
-            }
-            newContent = generator.regenerateForVulnerability(content, allVulnerabilities, (generator.getIterationCount() < 3));
+//            System.out.println("All vulnerabilities: ");
+//            for (Issue issue : allVulnerabilities) {
+//                System.out.println(issue.toString());
+//            }
+
+            System.out.println("Iteration count: " + generator.getIterationCount());
+            System.out.println("Iterations size: " + iterations.size());
+
+
+            newContent = generator.regenerateForVulnerability(content, vulnerabilities, (generator.getIterationCount() < 3));
             String newCode = responseHandler.extractCode(newContent);
             filePath = "/tmp/script" + generator.getIterationCount() + ".py";
             System.out.println("New code: " + newCode);
@@ -421,7 +438,7 @@ public class MyServlet extends HttpServlet {
             for (Issue issue : allVulnerabilities) {
                 System.out.println(issue.toString());
             }
-            newContent = generator.regenerateForVulnerability(content, allVulnerabilities, (generator.getIterationCount() < 3));
+            newContent = generator.regenerateForVulnerability(content, vulnerabilities, (generator.getIterationCount() < 3));
 //            newContent = generator.regenerateForVulnerability(content, vulnerabilities, (generator.getIterationCount() < 3));
             String newCode = responseHandler.extractCode(newContent);
             filePath = "/tmp/script" + generator.getIterationCount() + ".py";
@@ -575,6 +592,23 @@ public class MyServlet extends HttpServlet {
         }
         return issues;
     }
+
+    private int getLeastVulnerableIteration() {
+        if (iterations.isEmpty()) return 0;
+
+        int minIndex = 0;
+        int minVulnerabilities = iterations.get(0).getIssues().size();
+
+        for (int i = 1; i < iterations.size(); i++) {
+            int issuesCount = iterations.get(i).getIssues().size();
+            if (issuesCount < minVulnerabilities) {
+                minVulnerabilities = issuesCount;
+                minIndex = i;
+            }
+        }
+        return minIndex;
+    }
+
 
 }
 

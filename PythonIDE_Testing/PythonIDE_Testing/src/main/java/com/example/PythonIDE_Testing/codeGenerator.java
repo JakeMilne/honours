@@ -22,7 +22,7 @@ public class codeGenerator {
     //    private String[] exampleOutputs;
     private String[] outputNames;
     private String[] outputValues;
-    public int iterationCap = 3;
+    public int iterationCap = 5;
     private int iterationCount = 1;
     private String[][] issues;
     private LLM llm;
@@ -50,8 +50,9 @@ public class codeGenerator {
             System.out.println("Param Value: " + string);
         }
         this.llm = new LLM("https://api.openai.com/v1/chat/completions", "gpt-4o-mini", true, System.getenv("OPENAI_API_KEY"));
-        this.deepseekLlm = new LLM("https://api.deepseek.com/chat/completions", "deepseek-reasoner", true, System.getenv("DEEPSEEK_API_KEY"));
+//        this.deepseekLlm = new LLM("https://api.deepseek.com/chat/completions", "deepseek-chat", true, System.getenv("DEEPSEEK_API_KEY"));
 
+        this.deepseekLlm = new LLM("https://api.openai.com/v1/chat/completions", "gpt-4o", true, System.getenv("OPENAI_API_KEY"));
     }
 
 

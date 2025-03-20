@@ -1,125 +1,118 @@
 package com.example.PythonIDE_Testing;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.ArrayList;
 
 import com.opencsv.CSVReader;
 
 import java.io.FileReader;
-import java.io.IOException;
 
 import com.opencsv.exceptions.CsvValidationException;
 import com.opencsv.CSVWriter;
 
 import java.io.FileWriter;
 
-//https://github.com/tuhh-softsec/LLMSecEval/
-
 public class Evaluation {
     private ArrayList<ArrayList<String>> evalData;
-
     private ArrayList<String> prompts;
 
-
     public static void eval() {
-//        String inputFilePath = "C:\\Users\\jake\\output.csv";
         String inputFilePath = "C:\\Users\\jake\\Downloads\\LLMSecEval-Prompts_dataset.csv";
-        String outputFilePath = "C:\\Users\\jake\\output_with_vulnerabilities.csv";
 
-        try (CSVReader reader = new CSVReader(new FileReader(inputFilePath));
-             CSVWriter writer = new CSVWriter(new FileWriter(outputFilePath))) {
+        for (int run = 1; run <= 3; run++) {
+            String outputFilePath = "C:\\Users\\jake\\output_with_vulnerabilities_run" + run + ".csv";
+            try (CSVReader reader = new CSVReader(new FileReader(inputFilePath));
+                 CSVWriter writer = new CSVWriter(new FileWriter(outputFilePath))) {
+                String[] header = {
+                        "Prompt",
+                        "Vulnerability Count 1", "Vulnerability Count 2", "Vulnerability Count 3",
+                        "Vulnerability Count 4", "Vulnerability Count 5", "Lowest Vulnerability Count",
+                        "CWE 1", "CWE 2", "CWE 3", "CWE 4", "CWE 5", "Lowest CWE"
+                };
+                writer.writeNext(header);
+                reader.readNext();
+                String[] nextLine;
+                while ((nextLine = reader.readNext()) != null) {
+                    if (nextLine.length > 0) {
+                        String prompt = nextLine[2];
+                        ArrayList<Iteration> iterations = getVulnerabilities(prompt);
+                        String[] data = new String[13];
+                        data[0] = prompt;
 
-            String[] header = {"Prompt", "Vulnerability Count 1", "Vulnerability Count 2", "Vulnerability Count 3"};
-            writer.writeNext(header);
+                        int lowest = Integer.MAX_VALUE;
+                        StringBuilder lowestCWE = new StringBuilder();
 
-            reader.readNext();
-            String[] nextLine;
-//            int count = 0;
+                        for (int i = 0; i < 5; i++) {
+                            if (i < iterations.size()) {
+                                Iteration iteration = iterations.get(i);
+                                int issueCount = iteration.getIssues().size();
+                                data[i + 1] = String.valueOf(issueCount);
 
-            while ((nextLine = reader.readNext()) != null) { // && count < 20
-                if (nextLine.length > 0) {
-                    String prompt = nextLine[2];
-                    ArrayList<Iteration> iterations = getVulnerabilities(prompt);
+                                StringBuilder cwes = new StringBuilder();
+                                for (Issue issue : iteration.getIssues()) {
+                                    if (issue instanceof Vulnerability) {
+                                        if (cwes.length() > 0) {
+                                            cwes.append(", ");
+                                        }
+                                        cwes.append(((Vulnerability) issue).getCWE());
+                                    }
+                                }
+                                data[i + 7] = cwes.toString();
 
-
-                    String[] data = new String[4];
-                    data[0] = prompt;
-
-                    for (int i = 0; i < 3; i++) {
-                        if (i < iterations.size()) {
-                            int vulnerabilityCount = iterations.get(i).getIssues().size();
-                            data[i + 1] = String.valueOf(vulnerabilityCount);
-                        } else {
-                            data[i + 1] = "0"; //
+                                if (issueCount < lowest) {
+                                    lowest = issueCount;
+                                    lowestCWE.setLength(0);
+                                    lowestCWE.append(cwes);
+                                }
+                            } else {
+                                data[i + 1] = "0";
+                                data[i + 7] = "";
+                            }
                         }
-                    }
 
-                    writer.writeNext(data);
+                        if (lowest == Integer.MAX_VALUE) {
+                            lowest = 0;
+                            lowestCWE.setLength(0);
+                        }
+
+                        data[6] = String.valueOf(lowest);
+                        data[12] = lowestCWE.toString();
+                        writer.writeNext(data);
+                    }
                 }
-//                count++;
+            } catch (IOException | CsvValidationException e) {
+                e.printStackTrace();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (CsvValidationException e) {
-            e.printStackTrace();
         }
     }
-
 
     public static ArrayList<Iteration> getVulnerabilities(String prompt) {
         codeGenerator generator = new codeGenerator(prompt, new String[0], new String[0], new String[0], new String[0]);
         String callresponse = generator.callLM(prompt);
-
-        // response handler object parses LLM responses
         ResponseHandler responseHandler = new ResponseHandler();
         String content = responseHandler.extractCode(callresponse);
         content = "<pre>" + content.replace("\n", "<br>") + "</pre>";
-
-
-//        request.getSession().setAttribute("codeGenerator", generator);
-//        request.getSession().setAttribute("responseHandler", responseHandler);
-
-
-        // runTests method deals with the dockerHandler object and its methods
         ArrayList<Iteration> iterations = runTests(generator, responseHandler, content);
-
         for (Iteration iteration : iterations) {
             System.out.println(iteration.getIssues().size());
             for (Issue issue : iteration.getIssues()) {
                 System.out.println(issue.toString());
             }
         }
-
         return iterations;
-
     }
 
     public static ArrayList<Iteration> runTests(codeGenerator generator, ResponseHandler responseHandler, String content) {
-        ArrayList<Iteration> iterations = new ArrayList<Iteration>();
-        //dockerHandler object deals with saving files and doing stuff such as calling bandit on files
-
+        ArrayList<Iteration> iterations = new ArrayList<>();
         dockerHandler docker = new dockerHandler();
-
-        //adding docker to session variables
-//        request.getSession().setAttribute("dockerHandler", docker);
-
-
         String filePath = "/tmp/script.py";
         docker.saveFile(content, filePath, true);
         ArrayList<Issue> vulnerabilities = docker.runBanditOnFile(filePath);
         iterations.add(new Iteration(content, vulnerabilities));
         String newContent = "";
-
         while (!vulnerabilities.isEmpty() && (generator.getIterationCount() < generator.iterationCap)) {
             generator.incrementIterationCount();
-
             newContent = generator.regenerateForVulnerability(content, vulnerabilities, (generator.getIterationCount() == 1));
-
-//            newContent = generator.regenerateForVulnerability(content, vulnerabilities);
             String newCode = responseHandler.extractCode(newContent);
             filePath = "/tmp/script" + generator.getIterationCount() + ".py";
             docker.saveFile(newCode, filePath, false);
@@ -127,11 +120,6 @@ public class Evaluation {
             newCode = "<pre>" + newCode.replace("\n", "<br>") + "</pre>";
             iterations.add(new Iteration(newCode, vulnerabilities));
         }
-
         return iterations;
-
-
     }
-
-
 }
