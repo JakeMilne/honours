@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 
+//This is for the code editor, since the run can run the code I'm using this for communication between the user and the docker container
 public class MyWebSocketHandler extends TextWebSocketHandler {
 
     private static final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
@@ -39,16 +40,14 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
-
-
         sessions.put(session.getId(), session);
-
-
     }
 
+    //this handles messages from the user, sent from ide.html, via the runCode, sendInput, and runBandit js functions
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         JsonObject jsonMessage = Json.createReader(new StringReader(message.getPayload())).readObject();
+        //type refers to which function the message came from
         String type = jsonMessage.getString("type");
 
         if ("runCode".equals(type)) {
@@ -56,6 +55,8 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
             runUserCode(userCode, session);
 //            sendMessageToUser(session, result);
         }
+
+        //used for when the user is responding to input requests from the python
         if ("userInput".equals(type)) {
             String userInput = jsonMessage.getString("input");
             docker.addUserInput(userInput);
@@ -83,13 +84,10 @@ public class MyWebSocketHandler extends TextWebSocketHandler {
         docker.saveFile(code, "/tmp/usercode.py", false);
         docker.runFile("/tmp/usercode.py", session, code);
 
-        //this might be completely crazy. But, I might need to tokenize the python myself and keep track of input messages to make it work..
-
-        // need to call (+update) the runfile function in dockerHandler. maybe have another function to deal with interacting, call it the first time in runfile, then have a while in here that runs until the python is finished. would probably need to figure out how to identify the end of a python file, cant just go off of lines output
-//        return "Executed code: " + code;
     }
 
 
+    //used for sending messages to the user
     private void sendMessageToUser(WebSocketSession session, String message) {
 
         try {

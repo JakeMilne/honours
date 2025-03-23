@@ -1,29 +1,6 @@
 package com.example.PythonIDE_Testing;
 
+//an "Issue" can either be a vulnerability, or a failed unittest
 public class Issue {
 
-//    private Object issue;
-//
-//    public Issue(Object issue) {
-//        this.issue = issue;
-//    }
-
-//    public Object getIssue() {
-//        return issue;
-//    }
-//
-//    public void setIssue(Object issue) {
-//        this.issue = issue;
-//    }
-
-//    public String toString() {
-//        return issue.toString();
-//    }
-
-
-}
-
-enum issueType {
-    ERROR,
-    VULNERABILITY
 }

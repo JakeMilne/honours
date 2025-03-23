@@ -12,6 +12,7 @@ import com.google.gson.Gson;
 import java.util.ArrayList;
 
 
+//used to build the requests to LLMs, right now it is used for any LLMs that follow the same format as the OpenAI API, which includes deepseek, OpenAI, LM Studio among others
 public class LLM {
 
     private String url;
@@ -22,7 +23,7 @@ public class LLM {
     public LLM(String url, String model, boolean needsKey, String key) {
         this.url = url;
         this.model = model;
-        this.needsKey = needsKey;
+        this.needsKey = needsKey; //for most this is true, unless you are running a local model, in which case its probably false. if this is false just leave key as an empty string
         this.key = key;
 
     }
@@ -44,6 +45,7 @@ public class LLM {
         return key;
     }
 
+    //basic LLM rquest, used for the first iteration
     public HttpRequest buildCall(String prompt, codeGenerator generator) {
 
         Gson gson = new Gson();
@@ -53,6 +55,7 @@ public class LLM {
         return request;
     }
 
+    //can be used for any iteration after the first. used to regenerate code that contains vulnerabilities
     public HttpRequest buildVulnCall(ArrayList<Issue> vulnerabilities, String code) {
 
         Gson gson = new Gson();
@@ -64,6 +67,7 @@ public class LLM {
         return request;
     }
 
+    //same as above, but for errors
     public HttpRequest buildErrorCall(String error, String code) {
 
         Gson gson = new Gson();
@@ -74,6 +78,7 @@ public class LLM {
         return request;
     }
 
+    //building the prompt for the first iteration.
     public Map<String, Object> buildPrompt(String prompt, codeGenerator generator) {
         System.out.println(generator.getParamNames().length);
         System.out.println(generator.getOutputNames().length);
@@ -91,6 +96,8 @@ public class LLM {
                     )
             );
             return requestBody;
+
+            //the rest is for if the user specifies a unit test
         } else if ((generator.getParamNames().length == 0) && (((generator.getParamValues() != null && generator.getParamValues().length > 0) ? generator.getParamValues()[0] : null) == "")) {
             String[] outputNames = generator.getOutputNames();
             String[] outputValues = generator.getOutputValues();
@@ -101,13 +108,13 @@ public class LLM {
             Map<String, Object> requestBody = Map.of(
                     "model", this.model,
                     "messages", List.of(
-                            Map.of("role", "system", "content", "You are a coding assistant that creates python code. Only Create python 3.9 code, offer no explanation, do not include anything in your answer other than python code. Only return 1 piece of code. Tag all code with ```python. DO not create any code that is not specified by the user. All code generated must be in the same class and file. All code must be placed inside the same block. Only return python code, and do not provide any additional context or instructions to the user, unless they are in a comment inside the python code. your response must contain exactly 1 block of python code, no more or less. UNDER NO CIRCUMSTANCES WHATSOEVER SHOULD YOU GIVE ME MORE THAN 1 BLOCK OF CODE. unit tests must use the unittest package."),
+                            Map.of("role", "system", "content", "You are a coding assistant that creates python code. Only Create python 3.9 code, offer no explanation, do not include anything in your answer other than python code. Only return 1 piece of code. Tag all code with ```python. DO not create any code that is not specified by the user. All code generated must be in the same class and file. All code must be placed inside the same block. Only return python code, and do not provide any additional context or instructions to the user, unless they are in a comment inside the python code. your response must contain exactly 1 block of python code, no more or less. UNDER NO CIRCUMSTANCES WHATSOEVER SHOULD YOU GIVE ME MORE THAN 1 BLOCK OF CODE. unit tests must use the unittest package. DO NOT MODIFY THE USERS UNIT TEST AT ALL, EVEN IF IT IS WRONG, do not add any comments"),
 
                             Map.of("role", "user", "content", prompt)
                     )
             );
             return requestBody;
-        } else { //might need another for no outputs, but how can they even test that?????
+        } else {
             String[] paramNames = generator.getParamNames();
             String[] paramValues = generator.getParamValues();
             String[] outputNames = generator.getOutputNames();
@@ -128,7 +135,7 @@ public class LLM {
             Map<String, Object> requestBody = Map.of(
                     "model", this.model,
                     "messages", List.of(
-                            Map.of("role", "system", "content", "You are a coding assistant that creates python code. Only Create python 3.9 code, offer no explanation, do not include anything in your answer other than python code. Only return 1 piece of code. Tag all code with ```python. DO not create any code that is not specified by the user. All code generated must be in the same class and file. All code must be placed inside the same block. Only return python code, and do not provide any additional context or instructions to the user, unless they are in a comment inside the python code. your response must contain exactly 1 block of python code, no more or less. UNDER NO CIRCUMSTANCES WHATSOEVER SHOULD YOU GIVE ME MORE THAN 1 BLOCK OF CODE. unit tests must use the unittest package."),
+                            Map.of("role", "system", "content", "You are a coding assistant that creates python code. Only Create python 3.9 code, offer no explanation, do not include anything in your answer other than python code. Only return 1 piece of code. Tag all code with ```python. DO not create any code that is not specified by the user. All code generated must be in the same class and file. All code must be placed inside the same block. Only return python code, and do not provide any additional context or instructions to the user, unless they are in a comment inside the python code. your response must contain exactly 1 block of python code, no more or less. UNDER NO CIRCUMSTANCES WHATSOEVER SHOULD YOU GIVE ME MORE THAN 1 BLOCK OF CODE. unit tests must use the unittest package. DO NOT MODIFY THE USERS UNIT TEST AT ALL, EVEN IF IT IS WRONG, do not add any comments"),
 
                             Map.of("role", "user", "content", prompt)
                     )
@@ -137,9 +144,9 @@ public class LLM {
         }
 
 
-//        return requestBody;
     }
 
+    //building the prompt for regenerating for vulnerabilities
     public Map<String, Object> buildVulnPrompt(ArrayList<Issue> vulnerabilities, String code) {
         String vulnerability = "";
         for (Issue v : vulnerabilities) {
@@ -160,6 +167,7 @@ public class LLM {
         return requestBody;
     }
 
+    //same but for errors
     public Map<String, Object> buildErrorPrompt(String error, String code) {
 
         String prompt = "Fix the following errors(s): \n" + error + "\n found in this code: " + code;
@@ -175,6 +183,7 @@ public class LLM {
 
         return requestBody;
     }
+
 
     public HttpRequest buildRequest(String jsonBody) {
         HttpRequest request = HttpRequest.newBuilder()

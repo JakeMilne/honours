@@ -14,6 +14,7 @@ import java.util.Map;
 @ServletComponentScan
 public class PythonIdeTestingApplication {
 
+    //starting point, either use SpringApplication.run to use it as a website, or Evaluation.eval() to run testing
     public static void main(String[] args) {
         SpringApplication.run(PythonIdeTestingApplication.class, args);
 

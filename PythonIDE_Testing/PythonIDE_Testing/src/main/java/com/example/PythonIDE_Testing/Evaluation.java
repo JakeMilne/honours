@@ -12,6 +12,10 @@ import com.opencsv.CSVWriter;
 
 import java.io.FileWriter;
 
+//used to test the vulnerability side of things, Each prompt in the dataset is run 3x, and the amount of vulnerabilities and CWEs are recorded
+//dataset is available from: https://github.com/tuhh-softsec/LLMSecEval/blob/main/Dataset/LLMSecEval-Prompts_dataset.csv
+
+
 public class Evaluation {
     private ArrayList<ArrayList<String>> evalData;
     private ArrayList<String> prompts;
@@ -23,6 +27,8 @@ public class Evaluation {
             String outputFilePath = "C:\\Users\\jake\\output_with_vulnerabilities_run" + run + ".csv";
             try (CSVReader reader = new CSVReader(new FileReader(inputFilePath));
                  CSVWriter writer = new CSVWriter(new FileWriter(outputFilePath))) {
+
+                //CWE columns contain the CWEs of the vulnerabilities found in each iteration, Lowest CWE is the CWEs in the iteration with the least amount of vulnerabilities
                 String[] header = {
                         "Prompt",
                         "Vulnerability Count 1", "Vulnerability Count 2", "Vulnerability Count 3",
@@ -86,6 +92,7 @@ public class Evaluation {
         }
     }
 
+
     public static ArrayList<Iteration> getVulnerabilities(String prompt) {
         codeGenerator generator = new codeGenerator(prompt, new String[0], new String[0], new String[0], new String[0]);
         String callresponse = generator.callLM(prompt);
@@ -102,6 +109,8 @@ public class Evaluation {
         return iterations;
     }
 
+
+    //pretty much the same as runTests from myservlet
     public static ArrayList<Iteration> runTests(codeGenerator generator, ResponseHandler responseHandler, String content) {
         ArrayList<Iteration> iterations = new ArrayList<>();
         dockerHandler docker = new dockerHandler();

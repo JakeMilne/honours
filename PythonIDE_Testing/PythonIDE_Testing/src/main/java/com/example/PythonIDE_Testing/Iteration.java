@@ -2,6 +2,7 @@ package com.example.PythonIDE_Testing;
 
 import java.util.ArrayList;
 
+//used to represent an iteration or round in the regeneration process, stores the code and any issues
 public class Iteration {
     private String code;
     private ArrayList<Issue> issues;
