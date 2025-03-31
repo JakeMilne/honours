@@ -33,7 +33,7 @@ public class dockerHandler {
 
     //input queue is used to store the order of input requests in the python code, used in runFile on line 221
     private ConcurrentLinkedQueue<String> inputQueue = new ConcurrentLinkedQueue<>();
-    private boolean waitingForInput = false;
+    //    private boolean waitingForInput = false;
     //    private String containerName = "pythonide_testing-app-1";
     private String containerName = System.getenv("CONTAINER_NAME");
     private final Object webSocketLock = new Object();
@@ -114,7 +114,6 @@ public class dockerHandler {
         try {
             ProcessBuilder banditProcess = new ProcessBuilder(
                     "docker", "exec", "-i", containerName,
-//                    "bandit", "-r", "/tmp/script.py", "-v", "-f", "json"
                     "bandit", "-r", filepath, "-v"
 
             );

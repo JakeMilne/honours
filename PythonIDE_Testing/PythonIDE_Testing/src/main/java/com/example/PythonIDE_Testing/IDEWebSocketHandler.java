@@ -7,12 +7,8 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
-import java.io.IOException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
-import jakarta.json.Json;
-import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 import jakarta.json.JsonWriter;
 
@@ -20,19 +16,16 @@ import java.io.StringReader;
 import java.io.StringWriter;
 
 import org.springframework.web.socket.*;
-import org.springframework.web.socket.handler.TextWebSocketHandler;
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 
-import java.io.StringReader;
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.io.IOException;
 import java.util.ArrayList;
 
 
 //This is for the code editor, since the run can run the code I'm using this for communication between the user and the docker container
-public class MyWebSocketHandler extends TextWebSocketHandler {
+public class IDEWebSocketHandler extends TextWebSocketHandler {
 
     private static final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
     private dockerHandler docker = new dockerHandler();

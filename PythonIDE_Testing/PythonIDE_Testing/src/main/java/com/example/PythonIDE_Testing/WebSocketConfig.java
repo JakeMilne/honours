@@ -34,12 +34,12 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 public class WebSocketConfig implements WebSocketConfigurer {
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(myWebSocketHandler(), "/ws").setAllowedOrigins("*");
+        registry.addHandler(ideWebSocketHandler(), "/ws").setAllowedOrigins("*");
     }
 
     @Bean
-    public TextWebSocketHandler myWebSocketHandler() {
-        return new MyWebSocketHandler();
+    public TextWebSocketHandler ideWebSocketHandler() {
+        return new IDEWebSocketHandler();
     }
 }
 

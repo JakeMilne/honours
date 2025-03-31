@@ -14,7 +14,7 @@ import java.net.URLEncoder;
 
 import org.springframework.web.socket.WebSocketSession;
 
-//userIDE endpoint, pretty much gives the html then MyWebSocketHandler is used for actual backend stuff
+//userIDE endpoint, pretty much gives the html then IDEWebSocketHandler is used for actual backend stuff
 @WebServlet("/userIDE")
 public class IDEServlet extends HttpServlet {
 
