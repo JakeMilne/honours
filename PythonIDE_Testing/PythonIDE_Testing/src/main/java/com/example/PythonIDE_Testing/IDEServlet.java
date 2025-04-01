@@ -18,9 +18,6 @@ import org.springframework.web.socket.WebSocketSession;
 @WebServlet("/userIDE")
 public class IDEServlet extends HttpServlet {
 
-    private ArrayList<Iteration> iterations = new ArrayList<>();
-
-
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.getRequestDispatcher("/ide.html").forward(request, response);
