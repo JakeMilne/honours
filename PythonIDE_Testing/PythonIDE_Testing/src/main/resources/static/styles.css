@@ -1,15 +1,4 @@
 
-button {
-    padding: 10px 15px;
-    margin: 5px;
-    font-size: 16px;
-    color: #fff;
-    background-color: #007bff;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
 button:hover {
     background-color: #0056b3;
 }
@@ -32,7 +21,7 @@ button:hover {
     border-radius: 10px;
     display: flex;
     flex-direction: column;
-    width: 30%;
+    width: 60%;
     margin-top: 50px;
     display: none;
 }
@@ -78,11 +67,11 @@ input[type="submit"] {
 }
 
 button[type="button"] {
-    background-color: #27ae60;
+    background-color: #3498db;
 }
 
 button[type="button"]:hover {
-    background-color: #219653;
+    background-color: #2980b9;
 }
 
 .example-section {
@@ -126,13 +115,6 @@ button[type="button"]:hover {
     }
 }
 
-
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f8f9fa;
-    margin: 20px;
-    text-align: center;
-}
 
 h1, h2, h3 {
     color: #343a40;
@@ -361,17 +343,6 @@ button {
     transition: background-color 0.3s;
 }
 
-button:hover {
-    background-color: #2980b9;
-}
-
-button[type="button"] {
-    background-color: #27ae60;
-}
-
-button[type="button"]:hover {
-    background-color: #219653;
-}
 
 /* Example values and outputs */
 .example-section {
