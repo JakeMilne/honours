@@ -126,7 +126,6 @@ public class dockerHandler {
             BufferedReader reader = new BufferedReader(new InputStreamReader(bandit.getInputStream()));
             String line;
             String vulnerability = "";
-            int i = 1;
 
             //parsing bandit output to check for vulnerabilities
             while ((line = reader.readLine()) != null) {
@@ -136,7 +135,6 @@ public class dockerHandler {
 
                     vulnerability += line;
                     for (int j = 0; j < 7; j++) {
-                        i++;
                         line = reader.readLine();
                         vulnerability += line;
                         vulnerability += "\n";
@@ -147,7 +145,6 @@ public class dockerHandler {
 
                 }
 
-                i++;
             }
             if (vulnerabilities.toString().equals("[]")) {
                 System.out.println("No vulnerabilities found");
