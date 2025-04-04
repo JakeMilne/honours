@@ -387,7 +387,7 @@ public class dockerHandler {
                         try {
                             String input = inputQueue.poll();
                             if (input != null) {
-                                sendMessageToUser(session, " Sending input: " + input);
+//                                sendMessageToUser(session, " Sending input: " + input);
                                 writer.write(input + "\n");
                                 writer.flush();
                                 waitingForInput.set(false);

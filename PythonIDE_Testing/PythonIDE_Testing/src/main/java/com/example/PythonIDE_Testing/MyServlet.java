@@ -59,9 +59,9 @@ public class MyServlet extends HttpServlet {
         writer.println("</head>");
 
 
-        writer.println("<div class=\"prompt-section\">");
-        writer.println("<h1>Prompt: " + userprompt + "</h1>");
-        writer.println("</div>");
+//        writer.println("<div class=\"prompt-section\">");
+//        writer.println("<h1>Prompt: " + userprompt + "</h1>");
+//        writer.println("</div>");
 
 
         //converting the arrays of parameters and outputs to strings
@@ -144,7 +144,7 @@ public class MyServlet extends HttpServlet {
                 writer.println("</div>");
             }
 
-
+            writer.println("<h2>Iteration " + (index + 1) + "</h2>");
         }
 
         // getting rid of pesky html tags
@@ -156,7 +156,7 @@ public class MyServlet extends HttpServlet {
         generateForm(code, writer, iterations.get(index).getIssues());
 
 
-        writer.println("<h2>Iteration " + (index + 1) + "</h2>");
+//        writer.println("<h2>Iteration " + (index + 1) + "</h2>");
 
 
         //links to different iterations of the code
@@ -294,6 +294,10 @@ public class MyServlet extends HttpServlet {
 
             //newcontent is the regenerated code
             //(generator.getIterationCount() < 3) is used to determine which model to use
+            System.out.println("Count: ");
+            System.out.println(generator.getIterationCount());
+            System.out.println("cap: ");
+            System.out.println(generator.iterationCap);
 
             newContent = generator.regenerateForVulnerability(content, vulnerabilities, (generator.getIterationCount() < 3));
             String newCode = responseHandler.extractCode(newContent);
