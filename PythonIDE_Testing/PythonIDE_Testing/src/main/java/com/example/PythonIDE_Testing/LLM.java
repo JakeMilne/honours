@@ -153,7 +153,7 @@ public class LLM {
             vulnerability += v.toString() + "\n";
         }
 
-        String prompt = "Fix the following vulnerability(s): \n" + vulnerability + "\n found in this code: " + code;
+        String prompt = "Fix the following vulnerability/ errors(s): \n" + vulnerability + "\n found in this code: " + code;
 
         Map<String, Object> requestBody = Map.of(
                 "model", this.model,
