@@ -208,9 +208,9 @@ public class MyServlet extends HttpServlet {
         writer.println("</head>");
 
 
-        writer.println("<div class=\"prompt-section\">");
-        writer.println("<h1>Prompt: " + userprompt + "</h1>");
-        writer.println("</div>");
+//        writer.println("<div class=\"prompt-section\">");
+//        writer.println("<h1>Prompt: " + userprompt + "</h1>");
+//        writer.println("</div>");
 
 
         if (iterations.get(index).getIssues().size() > 0) {
